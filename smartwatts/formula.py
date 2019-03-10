@@ -1,0 +1,170 @@
+# Copyright (C) 2018  INRIA
+# Copyright (C) 2018  University of Lille
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import hashlib
+import pickle
+import warnings
+from collections import OrderedDict
+from typing import List, Dict
+
+from scipy.linalg import LinAlgWarning
+from sklearn import linear_model
+
+# make scikit-learn more silent
+warnings.filterwarnings('ignore', category=LinAlgWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
+
+
+class OutOfRangeFrequencyException(Exception):
+    """
+    This exception happens when an unsupported (too high) frequency is used in the formula.
+    """
+    pass
+
+
+class PowerModelNotInitializedException(Exception):
+    """
+    This exception happens when a user try to compute a power estimation without having learned a power model.
+    """
+    pass
+
+
+class SystemReportWrapper:
+    """
+    This wrapper stores the needed information for a System report and ease its usage when learning a power model.
+    """
+
+    def __init__(self, rapl: Dict[str, float], pcu: Dict[str, int], core: Dict[str, int]) -> None:
+        self.rapl = rapl
+        self.pcu = pcu
+        self.core = core
+
+    def X(self) -> List[int]:
+        """
+        Creates and return a list of events value from the PCU and Core events group.
+        The elements are sorted by the name of the events.
+        :return: List containing the PCU and Core events value sorted by event name
+        """
+        return [v for _, v in sorted(self.pcu.items()) + sorted(self.core.items())]
+
+    def y(self) -> List[float]:
+        """
+        Creates and return a list of events value from the RAPL events group.
+        :return: List containing the RAPL events value.
+        """
+        return [value for _, value in sorted(self.rapl.items())]
+
+
+class PowerModel:
+    """
+    .
+    """
+
+    def __init__(self) -> None:
+        self.model: linear_model.Ridge = None
+        self.hash: str = 'uninitialized'
+        self.reports: List[SystemReportWrapper] = []
+
+    def _learn(self) -> None:
+        """
+        Learn a new power model using the stored reports and update the formula hash.
+        :return: Nothing
+        """
+        X = []
+        y = []
+        for report in self.reports:
+            X.append(report.X())
+            y.append(report.y())
+
+        self.model = linear_model.Ridge().fit(X, y)
+        self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
+
+    def store(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int]) -> None:
+        """
+        Store the events group into the System reports list and learn a new power model.
+        :param rapl: RAPL events group
+        :param pcu: PCU events group
+        :param system_core: Core events group of System target
+        :return: Nothing
+        """
+        self.reports.append(SystemReportWrapper(rapl, pcu, system_core))
+        self._learn()
+
+    def compute_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> float:
+        """
+        Compute a power estimation for the given target.
+        :param rapl: RAPL events group
+        :param pcu: PCU events group
+        :param system_core: Core events group of System target
+        :param target_core: Core events group of any target
+        :return: Power estimation for the given target
+        :raise: PowerModelNotInitializedException when the power model is not initialized
+        """
+        if not self.model:
+            self.store(rapl, pcu, system_core)
+            raise PowerModelNotInitializedException()
+
+        r = SystemReportWrapper(rapl, pcu, target_core)
+        power = self.model.predict([r.X()])
+        return power.item(0)
+
+
+class SmartWattsFormula:
+    """
+    This formula compute per-target power estimations using hardware performance counters.
+    """
+
+    def __init__(self) -> None:
+        self.models = self._gen_models_dict(1100, 4200, 100)  # ONLY for microarchitectures newer than Sandy Bridge.
+
+    @staticmethod
+    def _gen_models_dict(freq_min: int, freq_max: int, freq_bclk: int) -> Dict[int, PowerModel]:
+        """
+        Generate and returns a layered container to store per-frequency power models.
+        :param freq_min: Minimum frequency in Hz
+        :param freq_max: Maximum frequency in Hz
+        :param freq_bclk: Base clock frequency in Hz
+        :return: Initialized Ordered dict containing a power model for each frequency layer.
+        """
+        return OrderedDict((frequency, PowerModel()) for frequency in range(freq_min, freq_max + 1, freq_bclk))
+
+    def _get_frequency_layer(self, frequency: float) -> int:
+        """
+        Find and returns the nearest frequency layer for the given frequency.
+        :param frequency: CPU frequency
+        :return: Nearest frequency layer for the given frequency
+        """
+        for layer_freq in self.models.keys():
+            if frequency < layer_freq:
+                return layer_freq
+
+        raise OutOfRangeFrequencyException('The %d frequency is not supported by the formula' % frequency)
+
+    def _compute_pkg_frequency(self, system_core: Dict[str, int]) -> float:
+        """
+        Compute the average package frequency.
+        :param system_core: Core events group of System target
+        :return: Average frequency of the Package
+        """
+        return system_core['CPU_CLK_THREAD_UNHALTED:REF_P'] / system_core['CPU_CLK_THREAD_UNHALTED:THREAD_P']
+
+    def get_power_model(self, system_core: Dict[str, int]) -> PowerModel:
+        """
+        Fetch the suitable power model for the current frequency.
+        :param system_core: Core events group of System target
+        :return: Power model to use for the current frequency
+        """
+        return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]
