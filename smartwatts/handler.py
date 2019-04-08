@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from enum import Enum
@@ -53,18 +52,9 @@ class ReportHandler(Handler):
 
     def _gen_rapl_events_group(self, system_report: HWPCReport) -> Dict[str, float]:
         """
-        Generate an events group with RAPL events converted in Watts for the current socket.
+        Generate an events group with the RAPL reference event converted in Watts for the current socket.
         :param system_report: The HWPC report of the System target
-        :return: A dictionnary containing the RAPL events with theirs values converted in Watts
-        """
-        """
-        rapl_events_group = {}
-        cpu_events = next(iter(system_report.groups['rapl'][self.socket].values()))
-        cpu_events = {k: v for k, v in cpu_events.items() if k.startswith('RAPL_')}
-        for event_name, event_value in cpu_events.items():
-            rapl_events_group[event_name] = math.ldexp(event_value, -32)
-
-        return rapl_events_group
+        :return: A dictionnary containing the RAPL reference event with its value converted in Watts
         """
         cpu_events = next(iter(system_report.groups['rapl'][self.socket].values()))
         energy = ldexp(cpu_events[self.rapl_event], -32)
@@ -98,6 +88,19 @@ class ReportHandler(Handler):
 
         return core_events_group
 
+    def _gen_agg_core_report_from_running_targets(self, targets_report: Dict[str, HWPCReport]) -> Dict[str, int]:
+        """
+        Generate an aggregate Core events group of the running targets for the current socket.
+        :param targets_report: List of Core events group of the running targets
+        :return: A dictionary containing an aggregate of the Core events for the running targets of the current socket
+        """
+        agg_core_events_group = defaultdict(int)
+        for _, target_report in targets_report.items():
+            for event_name, event_value in self._gen_core_events_group(target_report).items():
+                agg_core_events_group[event_name] += event_value
+
+        return agg_core_events_group
+
     def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float):
         """
         Generate a power report with the given parameters.
@@ -117,40 +120,38 @@ class ReportHandler(Handler):
         """
         timestamp, hwpc_reports = self.ticks.popitem(last=False)
 
-        logging.info('handling %s tick...' % timestamp)
-
         # power reports of the running targets
         power_reports = []
 
-        # prepare required events group of System target
-        system_report = hwpc_reports.pop('all')
-        rapl = self._gen_rapl_events_group(system_report)
-        pcu = self._gen_pcu_events_group(system_report)
-        system_core = self._gen_core_events_group(system_report)
+        # prepare required events group of Global target
+        global_report = hwpc_reports.pop('all')
+        rapl = self._gen_rapl_events_group(global_report)
+        pcu = self._gen_pcu_events_group(global_report)
+        global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
         # fetch power model to use
-        model = self.formula.get_power_model(system_core)
+        model = self.formula.get_power_model(global_core)
 
         # compute RAPL power report
         rapl_power = rapl[self.rapl_event]
         power_reports.append(self._gen_power_report(timestamp, 'rapl', self.rapl_event, rapl_power))
 
-        # compute System power report
+        # compute Global target power report
         try:
-            system_power = model.compute_power_estimation(rapl, pcu, system_core, system_core)
-            power_reports.append(self._gen_power_report(timestamp, 'system', model.hash, system_power))
+            system_power = model.compute_power_estimation(rapl, pcu, global_core, global_core)
+            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power))
         except PowerModelNotInitializedException:
             return power_reports
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power = model.compute_power_estimation(rapl, pcu, system_core, target_core)
+            target_power = model.compute_power_estimation(rapl, pcu, global_core, target_core)
             power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power))
 
-        # store system report if the power model error exceeds the error threshold
+        # store Global report if the power model error exceeds the error threshold
         if fabs(rapl_power - system_power) > self.error_threshold:
-            model.store(rapl, pcu, system_core)
+            model.store(rapl, pcu, global_core)
 
         return power_reports
 
