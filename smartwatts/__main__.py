@@ -17,18 +17,21 @@
 import argparse
 import logging
 import signal
-
 import zmq
+
+from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError, Supervisor
 from powerapi.database import MongoDB
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
 from powerapi.filter import Filter
-from powerapi.formula.smartwatts.formula import SmartWattsFormulaActor, FormulaScope
 from powerapi.puller import PullerActor
 from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report_model import HWPCModel
+
+from smartwatts import __version__ as smartwatts_version
+from smartwatts.actor import FormulaScope, SmartWattsFormulaActor
 
 
 class BadActorInitializationError(Exception):
@@ -42,13 +45,24 @@ def parse_cli_args():
     Parse the CLI arguments.
     :return: Namespace with parsed CLI arguments
     """
-    parser = argparse.ArgumentParser(description='SmartWatts power meter')
+    parser = argparse.ArgumentParser(description='SmartWatts power meter version %s' % smartwatts_version)
 
     # MongoDB options
     parser.add_argument('--mongodb-uri', help='MongoDB server URI', required=True)
     parser.add_argument('--mongodb-database', help='MongoDB database name', required=True)
     parser.add_argument('--mongodb-sensor-collection', default='sensor', help='MongoDB collection where the sensor reports are stored', required=True)
     parser.add_argument('--mongodb-powermeter-collection', default='powermeter', help='MongoDB collection where the power estimations will be stored', required=True)
+
+    # Formula modes
+    parser.add_argument('--system-only', help='Only compute the power estimations for the System target', default=False)
+
+    # Formula RAPL reference event
+    parser.add_argument('--cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models', default='RAPL_ENERGY_PKG')
+    parser.add_argument('--dram-rapl-ref-event', help='RAPL event used as reference for the DRAM power models', default='RAPL_ENERGY_DRAM')
+
+    # Formula error threshold
+    parser.add_argument('--cpu-error-threshold', help='Error threshold for the CPU power models', type=float, default=5.0)
+    parser.add_argument('--dram-error-threshold', help='Error threshold for the DRAM power models', type=float, default=2.0)
 
     # Debug options
     parser.add_argument('-T', '--dry-run', help='Dry run mode', action='store_true', default=False)
@@ -64,13 +78,19 @@ def run_smartwatts(args, logger):
     :param logger: Log level to use for the actors
     :return: Nothing
     """
+
+    # Print configuration
+    logger.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
+    logger.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%fW' % (args.cpu_rapl_ref_event, args.cpu_error_threshold))
+    logger.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%fW' % (args.dram_rapl_ref_event, args.dram_error_threshold))
+
     # Power reports pusher
     output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_powermeter_collection, HWPCModel())
     pusher = PusherActor('pusher', PowerReport, output_mongodb)
 
     # Formula factory
-    cpu_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.CPU, 'RAPL_ENERGY_PKG', 5.0))
-    dram_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.DRAM, 'RAPL_ENERGY_DRAM', 2.0))
+    cpu_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold))
+    dram_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.DRAM, args.dram_rapl_ref_event, args.dram_error_threshold))
 
     # Sensor reports route table
     route_table = RouteTable()
@@ -103,7 +123,7 @@ def run_smartwatts(args, logger):
     try:
         supervisor.launch_actor(pusher)
         supervisor.launch_actor(cpu_dispatcher)
-        #supervisor.launch_actor(dram_dispatcher)
+        supervisor.launch_actor(dram_dispatcher)
         supervisor.launch_actor(puller)
         logger.info('Actors initialized, SmartWatts is now running...')
     except zmq.error.ZMQError as exn:
