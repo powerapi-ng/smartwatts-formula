@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import hashlib
 import pickle
 import warnings
 from collections import OrderedDict
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from scipy.linalg import LinAlgWarning
 from sklearn import linear_model
@@ -56,7 +58,7 @@ class SystemReportWrapper:
         """
         Creates and return a list of events value from the PCU and Core events group.
         The elements are sorted by the name of the events.
-        :return: List containing the PCU and Core events value sorted by event name
+        :return: List containing the PCU and Core events value sorted by event name.
         """
         return [v for _, v in sorted(self.pcu.items()) + sorted(self.core.items())]
 
@@ -65,16 +67,16 @@ class SystemReportWrapper:
         Creates and return a list of events value from the RAPL events group.
         :return: List containing the RAPL events value.
         """
-        return [value for _, value in sorted(self.rapl.items())]
+        return [v for _, v in sorted(self.rapl.items())]
 
 
 class PowerModel:
     """
-    .
+    This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
     def __init__(self) -> None:
-        self.model: linear_model.Ridge = None
+        self.model: Union[linear_model.Ridge, None] = None
         self.hash: str = 'uninitialized'
         self.reports: List[SystemReportWrapper] = []
 
@@ -128,7 +130,7 @@ class SmartWattsFormula:
     """
 
     def __init__(self) -> None:
-        self.models = self._gen_models_dict(1100, 4200, 100)  # ONLY for microarchitectures newer than Sandy Bridge.
+        self.models = self._gen_models_dict(1000, 4200, 100)  # ONLY for microarchitectures newer than Sandy Bridge.
 
     @staticmethod
     def _gen_models_dict(freq_min: int, freq_max: int, freq_bclk: int) -> Dict[int, PowerModel]:
