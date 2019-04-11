@@ -24,7 +24,7 @@ from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
 from powerapi.report import HWPCReport, PowerReport
 
-from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException
+from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, OutOfRangeFrequencyException
 
 
 class FormulaScope(Enum):
@@ -101,7 +101,7 @@ class ReportHandler(Handler):
 
         return agg_core_events_group
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float):
+    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float):
         """
         Generate a power report with the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -110,7 +110,7 @@ class ReportHandler(Handler):
         :param power: Power estimation
         :return: A PowerReport filled with the given parameters
         """
-        metadata = {'scope': self.scope.value, 'socket': self.socket, 'formula': formula}
+        metadata = {'scope': self.scope.value, 'socket': self.socket, 'formula': formula, 'ratio': ratio}
         return PowerReport(timestamp, self.sensor, target, power, metadata)
 
     def _process_oldest_tick(self):
@@ -124,30 +124,38 @@ class ReportHandler(Handler):
         power_reports = []
 
         # prepare required events group of Global target
-        global_report = hwpc_reports.pop('all')
+        try:
+            global_report = hwpc_reports.pop('all')
+        except KeyError:
+            # cannot process this tick without the reference measurements
+            return power_reports
+
         rapl = self._gen_rapl_events_group(global_report)
         pcu = self._gen_pcu_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
-        # fetch power model to use
-        model = self.formula.get_power_model(global_core)
-
         # compute RAPL power report
         rapl_power = rapl[self.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.rapl_event, rapl_power))
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.rapl_event, rapl_power, 1.0))
+
+        # fetch power model to use
+        try:
+            model = self.formula.get_power_model(global_core)
+        except OutOfRangeFrequencyException:
+            return power_reports
 
         # compute Global target power report
         try:
-            system_power = model.compute_power_estimation(rapl, pcu, global_core, global_core)
-            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power))
+            system_power, _ = model.compute_power_estimation(rapl, pcu, global_core, global_core)
+            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power, 1.0))
         except PowerModelNotInitializedException:
             return power_reports
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power = model.compute_power_estimation(rapl, pcu, global_core, target_core)
-            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power))
+            target_power, target_ratio = model.compute_power_estimation(rapl, pcu, global_core, target_core)
+            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power, target_ratio))
 
         # store Global report if the power model error exceeds the error threshold
         if fabs(rapl_power - system_power) > self.error_threshold:

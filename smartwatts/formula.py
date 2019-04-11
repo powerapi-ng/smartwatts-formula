@@ -60,7 +60,7 @@ class SystemReportWrapper:
         The elements are sorted by the name of the events.
         :return: List containing the PCU and Core events value sorted by event name.
         """
-        return [v for _, v in sorted(self.pcu.items()) + sorted(self.core.items())]
+        return [v for _, v in sorted(self.core.items())]
 
     def y(self) -> List[float]:
         """
@@ -103,9 +103,11 @@ class PowerModel:
         :return: Nothing
         """
         self.reports.append(SystemReportWrapper(rapl, pcu, system_core))
-        self._learn()
 
-    def compute_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> float:
+        if len(self.reports) > 3:
+            self._learn()
+
+    def compute_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
         """
         Compute a power estimation for the given target.
         :param rapl: RAPL events group
@@ -119,9 +121,26 @@ class PowerModel:
             self.store(rapl, pcu, system_core)
             raise PowerModelNotInitializedException()
 
-        r = SystemReportWrapper(rapl, pcu, target_core)
-        power = self.model.predict([r.X()])
-        return power.item(0)
+        ref_power = next(iter(rapl.values()))
+        system = SystemReportWrapper(rapl, pcu, system_core).X()
+        target = SystemReportWrapper(rapl, pcu, target_core).X()
+
+        coefs = next(iter(self.model.coef_))
+        sum_coefs = sum(coefs)
+
+        ratio = 0.0
+        for index, coef in enumerate(coefs):
+            try:
+                # print('%d (%s / %s) * (%s / %s)' % (index, coef, sum_coefs, target[index], system[index]))
+                ratio += (coef / sum_coefs) * (target[index] / system[index])
+            except ZeroDivisionError:
+                pass
+
+        target_power = ref_power * ratio
+        if target_power < 0.0:
+            return 0.0, 0.0
+
+        return target_power, ratio
 
 
 class SmartWattsFormula:
@@ -169,4 +188,8 @@ class SmartWattsFormula:
         :param system_core: Core events group of System target
         :return: Power model to use for the current frequency
         """
-        return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]
+        try:
+            return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]
+        except ZeroDivisionError:
+            # TODO: fix when libpfm4 support aperf/mperf events
+            raise OutOfRangeFrequencyException('Cannot compute frequency of an inactive package')
