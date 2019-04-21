@@ -18,13 +18,16 @@ from collections import OrderedDict, defaultdict
 from datetime import datetime
 from enum import Enum
 from math import ldexp, fabs
-from typing import Dict
+from typing import Dict, List
 
 from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
+from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport, PowerReport
+from powerapi.report.formula_report import FormulaReport
 
-from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, OutOfRangeFrequencyException
+from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, OutOfRangeFrequencyException, \
+    PowerModel
 
 
 class FormulaScope(Enum):
@@ -40,9 +43,10 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, sensor: str, pusher, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float):
+    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float):
         self.sensor = sensor
-        self.pusher = pusher
+        self.power_report_pusher = power_report_pusher
+        self.formula_report_pusher = formula_report_pusher
         self.socket = socket
         self.scope = scope
         self.rapl_event = rapl_event
@@ -101,9 +105,9 @@ class ReportHandler(Handler):
 
         return agg_core_events_group
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float):
+    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float) -> PowerReport:
         """
-        Generate a power report with the given parameters.
+        Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
         :param target: Target name
         :param formula: Formula identifier
@@ -113,22 +117,41 @@ class ReportHandler(Handler):
         metadata = {'scope': self.scope.value, 'socket': self.socket, 'formula': formula, 'ratio': ratio}
         return PowerReport(timestamp, self.sensor, target, power, metadata)
 
-    def _process_oldest_tick(self):
+    def _gen_formula_report(self, timestamp: datetime, pkg_frequency: float, model: PowerModel, error: float) -> FormulaReport:
+        """
+        Generate a formula report using the given parameters.
+        :param timestamp:
+        :param target:
+        :param model:
+        :return:
+        """
+        metadata = {
+            'scope': self.scope.value,
+            'socket': self.socket,
+            'layer_frequency': model.frequency,
+            'pkg_frequency': pkg_frequency,
+            'reports': len(model.reports),
+            'error': error
+        }
+        return FormulaReport(timestamp, self.sensor, model.hash, metadata)
+
+    def _process_oldest_tick(self) -> (List[PowerReport], List[FormulaReport]):
         """
         Process the oldest tick stored in the stack and generate power reports for the running target(s).
         :return: Power reports of the running target(s)
         """
         timestamp, hwpc_reports = self.ticks.popitem(last=False)
 
-        # power reports of the running targets
+        # reports of the current tick
         power_reports = []
+        formula_reports = []
 
         # prepare required events group of Global target
         try:
             global_report = hwpc_reports.pop('all')
         except KeyError:
             # cannot process this tick without the reference measurements
-            return power_reports
+            return power_reports, formula_reports
 
         rapl = self._gen_rapl_events_group(global_report)
         pcu = self._gen_pcu_events_group(global_report)
@@ -140,30 +163,37 @@ class ReportHandler(Handler):
 
         # fetch power model to use
         try:
+            pkg_frequency = self.formula._compute_pkg_frequency(global_core)
             model = self.formula.get_power_model(global_core)
         except OutOfRangeFrequencyException:
-            return power_reports
+            return power_reports, formula_reports
 
         # compute Global target power report
         try:
-            system_power, _ = model.compute_power_estimation(rapl, pcu, global_core, global_core)
+            system_power = model.compute_global_power_estimation(rapl, pcu, global_core)
             power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power, 1.0))
         except PowerModelNotInitializedException:
-            return power_reports
+            return power_reports, formula_reports
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power, target_ratio = model.compute_power_estimation(rapl, pcu, global_core, target_core)
+            target_power, target_ratio = model.compute_target_power_estimation(rapl, pcu, global_core, target_core)
             power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power, target_ratio))
 
+        # compute power model error from reference
+        model_error = fabs(rapl_power - system_power)
+
         # store Global report if the power model error exceeds the error threshold
-        if fabs(rapl_power - system_power) > self.error_threshold:
+        if model_error > self.error_threshold:
             model.store(rapl, pcu, global_core)
 
-        return power_reports
+        # store information about the power model used for this tick
+        formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))
 
-    def _process_report(self, report):
+        return power_reports, formula_reports
+
+    def _process_report(self, report) -> None:
         """
         Process the received report and trigger the processing of the old ticks.
         :param report: HWPC report of a target
@@ -173,11 +203,18 @@ class ReportHandler(Handler):
         # store the received report into the tick's bucket
         self.ticks.setdefault(report.timestamp, {}).update({report.target: report})
 
-        # start to process the oldest tick only after receiving at least 5 ticks
+        # start to process the oldest tick only after receiving at least 5 ticks.
+        # we delay the processing of the ticks in order to mitigate the possible slowiness of the sensor/database.
         if len(self.ticks) > 5:
-            return self._process_oldest_tick()
+            power_reports, formula_reports = self._process_oldest_tick()
 
-        return []
+            # store power reports
+            for power_report in power_reports:
+                self.power_report_pusher.send_data(power_report)
+
+            # store formula reports
+            for formula_report in formula_reports:
+                self.formula_report_pusher.send_data(formula_report)
 
     def handle(self, msg, state):
         """
@@ -190,8 +227,6 @@ class ReportHandler(Handler):
         if not isinstance(msg, HWPCReport):
             raise UnknowMessageTypeException(type(msg))
 
-        result = self._process_report(msg)
-        for report in result:
-            self.pusher.send_data(report)
+        self._process_report(msg)
 
         return state

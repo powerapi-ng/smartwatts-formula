@@ -20,6 +20,7 @@ import re
 from powerapi.formula import FormulaActor
 from powerapi.handler import PoisonPillMessageHandler
 from powerapi.message import PoisonPillMessage
+from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
 from smartwatts.handler import ReportHandler, FormulaScope
@@ -30,16 +31,17 @@ class SmartWattsFormulaActor(FormulaActor):
     This actor handle the reports for the SmartWatts formula.
     """
 
-    def __init__(self, name, pusher, scope: FormulaScope, rapl_event: str, error_threshold: float):
+    def __init__(self, name, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, scope: FormulaScope, rapl_event: str, error_threshold: float):
         """
         Initialize the actor.
         :param name: Name of the formula
         :param pusher: Pusher to whom the formula must send its reports
         """
-        FormulaActor.__init__(self, name, pusher, logging.WARNING)
+        FormulaActor.__init__(self, name, power_report_pusher, logging.WARNING)
         self.scope = scope
         self.rapl_event = rapl_event
         self.error_threshold = error_threshold
+        self.formula_report_pusher = formula_report_pusher
 
         m = re.search(r'^\(\'(.*)\', \'(.*)\', \'(.*)\'\)$', name)  # TODO: Need a better way to get these information
         self.dispatcher = m.group(1)
@@ -52,5 +54,6 @@ class SmartWattsFormulaActor(FormulaActor):
         """
         FormulaActor.setup(self)
         self.add_handler(PoisonPillMessage, PoisonPillMessageHandler())
-        handler = ReportHandler(self.sensor, self.actor_pusher, self.socket, self.scope, self.rapl_event, self.error_threshold)
+        self.formula_report_pusher.connect_data()
+        handler = ReportHandler(self.sensor, self.actor_pusher, self.formula_report_pusher, self.socket, self.scope, self.rapl_event, self.error_threshold)
         self.add_handler(HWPCReport, handler)

@@ -28,6 +28,7 @@ from powerapi.filter import Filter
 from powerapi.puller import PullerActor
 from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport, PowerReport
+from powerapi.report.formula_report import FormulaReport
 from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
@@ -50,8 +51,9 @@ def parse_cli_args():
     # MongoDB options
     parser.add_argument('--mongodb-uri', help='MongoDB server URI', required=True)
     parser.add_argument('--mongodb-database', help='MongoDB database name', required=True)
-    parser.add_argument('--mongodb-sensor-collection', default='sensor', help='MongoDB collection where the sensor reports are stored', required=True)
-    parser.add_argument('--mongodb-powermeter-collection', default='powermeter', help='MongoDB collection where the power estimations will be stored', required=True)
+    parser.add_argument('--mongodb-sensor-collection', help='MongoDB collection where the sensor reports are stored', default='sensor')
+    parser.add_argument('--mongodb-powermeter-collection', help='MongoDB collection where the power estimations will be stored', default='powermeter')
+    parser.add_argument('--mongodb-formula-collection', help='MongoDB collection where information about the used formula will be stored', default='formula')
 
     # Formula modes
     parser.add_argument('--system-only', help='Only compute the power estimations for the System target', default=False)
@@ -81,16 +83,18 @@ def run_smartwatts(args, logger):
 
     # Print configuration
     logger.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
-    logger.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%fW' % (args.cpu_rapl_ref_event, args.cpu_error_threshold))
-    logger.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%fW' % (args.dram_rapl_ref_event, args.dram_error_threshold))
+    logger.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (args.cpu_rapl_ref_event, args.cpu_error_threshold))
+    logger.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (args.dram_rapl_ref_event, args.dram_error_threshold))
 
-    # Power reports pusher
-    output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_powermeter_collection, HWPCModel())
-    pusher = PusherActor('pusher', PowerReport, output_mongodb)
+    # Reports pusher
+    power_output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_powermeter_collection, None)
+    power_report_pusher = PusherActor('power_report_pusher', PowerReport, power_output_mongodb)
+    formula_output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_formula_collection, None)
+    formula_report_pusher = PusherActor('formula_report_pusher', FormulaReport, formula_output_mongodb)
 
     # Formula factory
-    cpu_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold))
-    dram_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, pusher, FormulaScope.DRAM, args.dram_rapl_ref_event, args.dram_error_threshold))
+    cpu_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, power_report_pusher, formula_report_pusher, FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold))
+    dram_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, power_report_pusher, formula_report_pusher, FormulaScope.DRAM, args.dram_rapl_ref_event, args.dram_error_threshold))
 
     # Sensor reports route table
     route_table = RouteTable()
@@ -105,13 +109,14 @@ def run_smartwatts(args, logger):
     report_filter = Filter()
     report_filter.filter(lambda msg: True, cpu_dispatcher)
     report_filter.filter(lambda msg: True, dram_dispatcher)
-    puller = PullerActor('puller', input_mongodb, report_filter)
+    puller = PullerActor('hwpc_report_puller', input_mongodb, report_filter)
 
     def term_handler(_, __):
         puller.join()
         cpu_dispatcher.join()
         dram_dispatcher.join()
-        pusher.join()
+        power_report_pusher.join()
+        formula_report_pusher.join()
         exit(0)
 
     # TERM/INT signals handler
@@ -121,7 +126,8 @@ def run_smartwatts(args, logger):
     # Actors supervision
     supervisor = Supervisor()
     try:
-        supervisor.launch_actor(pusher)
+        supervisor.launch_actor(power_report_pusher)
+        supervisor.launch_actor(formula_report_pusher)
         supervisor.launch_actor(cpu_dispatcher)
         supervisor.launch_actor(dram_dispatcher)
         supervisor.launch_actor(puller)

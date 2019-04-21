@@ -26,6 +26,8 @@ from scipy.linalg import LinAlgWarning
 from sklearn import linear_model
 
 # make scikit-learn more silent
+from sklearn.linear_model import Ridge
+
 warnings.filterwarnings('ignore', category=LinAlgWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 
@@ -75,8 +77,9 @@ class PowerModel:
     This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
-    def __init__(self) -> None:
-        self.model: Union[linear_model.Ridge, None] = None
+    def __init__(self, frequency) -> None:
+        self.frequency = frequency
+        self.model: Union[Ridge, None] = None
         self.hash: str = 'uninitialized'
         self.reports: List[SystemReportWrapper] = []
 
@@ -91,7 +94,7 @@ class PowerModel:
             X.append(report.X())
             y.append(report.y())
 
-        self.model = linear_model.Ridge().fit(X, y)
+        self.model = Ridge().fit(X, y)
         self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
 
     def store(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int]) -> None:
@@ -107,7 +110,22 @@ class PowerModel:
         if len(self.reports) > 3:
             self._learn()
 
-    def compute_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
+    def compute_global_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], global_core: Dict[str, int]) -> float:
+        """
+        Compute the global power estimation using the power model.
+        :param rapl: RAPL events group
+        :param pcu: PCU events group
+        :param global_core: Core events group of all target
+        :return:
+        """
+        if not self.model:
+            self.store(rapl, pcu, global_core)
+            raise PowerModelNotInitializedException()
+
+        report = SystemReportWrapper(rapl, pcu, global_core)
+        return self.model.predict([report.X()])
+
+    def compute_target_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
         """
         Compute a power estimation for the given target.
         :param rapl: RAPL events group
@@ -131,7 +149,6 @@ class PowerModel:
         ratio = 0.0
         for index, coef in enumerate(coefs):
             try:
-                # print('%d (%s / %s) * (%s / %s)' % (index, coef, sum_coefs, target[index], system[index]))
                 ratio += (coef / sum_coefs) * (target[index] / system[index])
             except ZeroDivisionError:
                 pass
@@ -160,7 +177,7 @@ class SmartWattsFormula:
         :param freq_bclk: Base clock frequency in Hz
         :return: Initialized Ordered dict containing a power model for each frequency layer.
         """
-        return OrderedDict((frequency, PowerModel()) for frequency in range(freq_min, freq_max + 1, freq_bclk))
+        return OrderedDict((frequency, PowerModel(frequency)) for frequency in range(freq_min, freq_max + 1, freq_bclk))
 
     def _get_frequency_layer(self, frequency: float) -> int:
         """
