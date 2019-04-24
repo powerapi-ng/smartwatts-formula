@@ -123,7 +123,7 @@ class PowerModel:
             raise PowerModelNotInitializedException()
 
         report = SystemReportWrapper(rapl, pcu, global_core)
-        return self.model.predict([report.X()])
+        return self.model.predict([report.X()])[0, 0]
 
     def compute_target_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
         """
@@ -185,19 +185,21 @@ class SmartWattsFormula:
         :param frequency: CPU frequency
         :return: Nearest frequency layer for the given frequency
         """
-        for layer_freq in self.models.keys():
-            if frequency < layer_freq:
-                return layer_freq
+        last_layer_freq = 0
+        for current_layer_freq in self.models.keys():
+            if frequency < current_layer_freq:
+                return last_layer_freq
+            last_layer_freq = current_layer_freq
 
-        raise OutOfRangeFrequencyException('The %d frequency is not supported by the formula' % frequency)
+        return last_layer_freq
 
-    def _compute_pkg_frequency(self, system_core: Dict[str, int]) -> float:
+    def _compute_pkg_frequency(self, system_msr: Dict[str, int]) -> float:
         """
         Compute the average package frequency.
-        :param system_core: Core events group of System target
+        :param msr: MSR events group of System target
         :return: Average frequency of the Package
         """
-        return system_core['CPU_CLK_THREAD_UNHALTED:REF_P'] / system_core['CPU_CLK_THREAD_UNHALTED:THREAD_P']
+        return (2100 * system_msr['APERF']) / system_msr['MPERF']  # TODO: the base frequency should not be hardcoded
 
     def get_power_model(self, system_core: Dict[str, int]) -> PowerModel:
         """
@@ -205,8 +207,4 @@ class SmartWattsFormula:
         :param system_core: Core events group of System target
         :return: Power model to use for the current frequency
         """
-        try:
-            return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]
-        except ZeroDivisionError:
-            # TODO: fix when libpfm4 support aperf/mperf events
-            raise OutOfRangeFrequencyException('Cannot compute frequency of an inactive package')
+        return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]

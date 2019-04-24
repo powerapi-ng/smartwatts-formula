@@ -58,11 +58,26 @@ class ReportHandler(Handler):
         """
         Generate an events group with the RAPL reference event converted in Watts for the current socket.
         :param system_report: The HWPC report of the System target
-        :return: A dictionnary containing the RAPL reference event with its value converted in Watts
+        :return: A dictionary containing the RAPL reference event with its value converted in Watts
         """
         cpu_events = next(iter(system_report.groups['rapl'][self.socket].values()))
         energy = ldexp(cpu_events[self.rapl_event], -32)
         return {self.rapl_event: energy}
+
+    def _gen_msr_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
+        """
+        Generate an events group with the MSR counters for the current socket.
+        :param system_report: The HWPC report of the System target
+        :return: A dictionary containing the MSR counters.
+        """
+        msr_events_group = defaultdict(int)
+        msr_events_count = defaultdict(int)
+        for _, cpu_events in system_report.groups['msr'][self.socket].items():
+            for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
+                msr_events_group[event_name] += event_value
+                msr_events_count[event_name] += 1
+
+        return {k: (v / msr_events_count[k]) for k, v in msr_events_group.items()}
 
     def _gen_pcu_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
         """
@@ -155,6 +170,7 @@ class ReportHandler(Handler):
 
         rapl = self._gen_rapl_events_group(global_report)
         pcu = self._gen_pcu_events_group(global_report)
+        avg_msr = self._gen_msr_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
         # compute RAPL power report
@@ -163,8 +179,8 @@ class ReportHandler(Handler):
 
         # fetch power model to use
         try:
-            pkg_frequency = self.formula._compute_pkg_frequency(global_core)
-            model = self.formula.get_power_model(global_core)
+            pkg_frequency = self.formula._compute_pkg_frequency(avg_msr)
+            model = self.formula.get_power_model(avg_msr)
         except OutOfRangeFrequencyException:
             return power_reports, formula_reports
 
