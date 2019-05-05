@@ -33,6 +33,7 @@ from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import FormulaScope, SmartWattsFormulaActor
+from smartwatts.topology import CpuTopology
 
 
 class BadActorInitializationError(Exception):
@@ -62,9 +63,15 @@ def parse_cli_args():
     parser.add_argument('--cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models', default='RAPL_ENERGY_PKG')
     parser.add_argument('--dram-rapl-ref-event', help='RAPL event used as reference for the DRAM power models', default='RAPL_ENERGY_DRAM')
 
+    # CPU topology information
+    parser.add_argument('--cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
+    parser.add_argument('--cpu-freq-min', help='CPU minimal frequency (in kHz)', type=int, default=1000)
+    parser.add_argument('--cpu-freq-base', help='CPU base frequency (in kHz)', type=int, default=2300)
+    parser.add_argument('--cpu-freq-max', help='CPU maximal frequency (in kHz)', type=int, default=3800)
+
     # Formula error threshold
-    parser.add_argument('--cpu-error-threshold', help='Error threshold for the CPU power models', type=float, default=5.0)
-    parser.add_argument('--dram-error-threshold', help='Error threshold for the DRAM power models', type=float, default=2.0)
+    parser.add_argument('--cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=5.0)
+    parser.add_argument('--dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float, default=2.0)
 
     # Debug options
     parser.add_argument('-T', '--dry-run', help='Dry run mode', action='store_true', default=False)
@@ -92,16 +99,35 @@ def run_smartwatts(args, logger):
     formula_output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_formula_collection, None)
     formula_report_pusher = PusherActor('formula_report_pusher', FormulaReport, formula_output_mongodb)
 
-    # Formula factory
-    cpu_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, power_report_pusher, formula_report_pusher, FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold))
-    dram_formula_factory = (lambda name, verbose: SmartWattsFormulaActor(name, power_report_pusher, formula_report_pusher, FormulaScope.DRAM, args.dram_rapl_ref_event, args.dram_error_threshold))
+    # CPU topology information
+    cpu_topology = CpuTopology(args.cpu_base_clock, args.cpu_freq_min, args.cpu_freq_base, args.cpu_freq_max)
 
     # Sensor reports route table
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
-    # Formula dispatchers
+    # CPU formula dispatcher
+    def cpu_formula_factory(name: str, _):
+        return SmartWattsFormulaActor(name,
+                                      power_report_pusher,
+                                      formula_report_pusher,
+                                      FormulaScope.CPU,
+                                      args.cpu_rapl_ref_event,
+                                      args.cpu_error_threshold,
+                                      cpu_topology)
+
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, route_table)
+
+    # DRAM formula dispatcher
+    def dram_formula_factory(name: str, _):
+        return SmartWattsFormulaActor(name,
+                                      power_report_pusher,
+                                      formula_report_pusher,
+                                      FormulaScope.DRAM,
+                                      args.dram_rapl_ref_event,
+                                      args.dram_error_threshold,
+                                      cpu_topology)
+
     dram_dispatcher = DispatcherActor('dram_dispatcher', dram_formula_factory, route_table)
 
     # Sensor reports puller

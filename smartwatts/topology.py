@@ -26,7 +26,7 @@ class CpuTopology:
         """
         Create a new CPU topology object.
         :param freq_bclk: Base clock in MHz
-        :param freq_min: Minimal frequency in kHz
+        :param freq_min: Minimal frequency (MEF) in kHz
         :param freq_base: Base frequency in kHz
         :param freq_max: Maximum frequency in kHz
         """
