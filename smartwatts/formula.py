@@ -23,20 +23,13 @@ from collections import OrderedDict
 from typing import List, Dict, Union
 
 from scipy.linalg import LinAlgWarning
-from sklearn import linear_model
-
-# make scikit-learn more silent
 from sklearn.linear_model import Ridge
 
+from smartwatts.topology import CpuTopology
+
+# make scikit-learn more silent
 warnings.filterwarnings('ignore', category=LinAlgWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
-
-
-class OutOfRangeFrequencyException(Exception):
-    """
-    This exception happens when an unsupported (too high) frequency is used in the formula.
-    """
-    pass
 
 
 class PowerModelNotInitializedException(Exception):
@@ -46,21 +39,19 @@ class PowerModelNotInitializedException(Exception):
     pass
 
 
-class SystemReportWrapper:
+class ReportWrapper:
     """
     This wrapper stores the needed information for a System report and ease its usage when learning a power model.
     """
 
-    def __init__(self, rapl: Dict[str, float], pcu: Dict[str, int], core: Dict[str, int]) -> None:
+    def __init__(self, rapl: Dict[str, float], core: Dict[str, int]) -> None:
         self.rapl = rapl
-        self.pcu = pcu
         self.core = core
 
     def X(self) -> List[int]:
         """
-        Creates and return a list of events value from the PCU and Core events group.
-        The elements are sorted by the name of the events.
-        :return: List containing the PCU and Core events value sorted by event name.
+        Creates and return a list of events value from the Core events group.
+        :return: List containing the Core events value sorted by event name.
         """
         return [v for _, v in sorted(self.core.items())]
 
@@ -77,11 +68,11 @@ class PowerModel:
     This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
-    def __init__(self, frequency) -> None:
+    def __init__(self, frequency: int) -> None:
         self.frequency = frequency
         self.model: Union[Ridge, None] = None
         self.hash: str = 'uninitialized'
-        self.reports: List[SystemReportWrapper] = []
+        self.reports: List[ReportWrapper] = []
 
     def _learn(self) -> None:
         """
@@ -97,51 +88,48 @@ class PowerModel:
         self.model = Ridge().fit(X, y)
         self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
 
-    def store(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int]) -> None:
+    def store(self, rapl: Dict[str, float], global_core: Dict[str, int]) -> None:
         """
         Store the events group into the System reports list and learn a new power model.
         :param rapl: RAPL events group
-        :param pcu: PCU events group
-        :param system_core: Core events group of System target
+        :param global_core: Core events group of all targets
         :return: Nothing
         """
-        self.reports.append(SystemReportWrapper(rapl, pcu, system_core))
+        self.reports.append(ReportWrapper(rapl, global_core))
 
         if len(self.reports) > 3:
             self._learn()
 
-    def compute_global_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], global_core: Dict[str, int]) -> float:
+    def compute_global_power_estimation(self, rapl: Dict[str, float], global_core: Dict[str, int]) -> float:
         """
         Compute the global power estimation using the power model.
         :param rapl: RAPL events group
-        :param pcu: PCU events group
-        :param global_core: Core events group of all target
+        :param global_core: Core events group of all targets
         :return:
         """
         if not self.model:
-            self.store(rapl, pcu, global_core)
+            self.store(rapl, global_core)
             raise PowerModelNotInitializedException()
 
-        report = SystemReportWrapper(rapl, pcu, global_core)
+        report = ReportWrapper(rapl, global_core)
         return self.model.predict([report.X()])[0, 0]
 
-    def compute_target_power_estimation(self, rapl: Dict[str, float], pcu: Dict[str, int], system_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
+    def compute_target_power_estimation(self, rapl: Dict[str, float], global_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
         """
         Compute a power estimation for the given target.
         :param rapl: RAPL events group
-        :param pcu: PCU events group
-        :param system_core: Core events group of System target
+        :param global_core: Core events group of all targets
         :param target_core: Core events group of any target
         :return: Power estimation for the given target
         :raise: PowerModelNotInitializedException when the power model is not initialized
         """
         if not self.model:
-            self.store(rapl, pcu, system_core)
+            self.store(rapl, global_core)
             raise PowerModelNotInitializedException()
 
         ref_power = next(iter(rapl.values()))
-        system = SystemReportWrapper(rapl, pcu, system_core).X()
-        target = SystemReportWrapper(rapl, pcu, target_core).X()
+        system = ReportWrapper(rapl, global_core).X()
+        target = ReportWrapper(rapl, target_core).X()
 
         coefs = next(iter(self.model.coef_))
         sum_coefs = sum(coefs)
@@ -165,19 +153,16 @@ class SmartWattsFormula:
     This formula compute per-target power estimations using hardware performance counters.
     """
 
-    def __init__(self) -> None:
-        self.models = self._gen_models_dict(1000, 4200, 100)  # ONLY for microarchitectures newer than Sandy Bridge.
+    def __init__(self, cpu_topology: CpuTopology) -> None:
+        self.cpu_topology = cpu_topology
+        self.models = self._gen_models_dict()
 
-    @staticmethod
-    def _gen_models_dict(freq_min: int, freq_max: int, freq_bclk: int) -> Dict[int, PowerModel]:
+    def _gen_models_dict(self) -> Dict[int, PowerModel]:
         """
         Generate and returns a layered container to store per-frequency power models.
-        :param freq_min: Minimum frequency in Hz
-        :param freq_max: Maximum frequency in Hz
-        :param freq_bclk: Base clock frequency in Hz
         :return: Initialized Ordered dict containing a power model for each frequency layer.
         """
-        return OrderedDict((frequency, PowerModel(frequency)) for frequency in range(freq_min, freq_max + 1, freq_bclk))
+        return OrderedDict((freq, PowerModel(freq)) for freq in self.cpu_topology.get_supported_frequencies())
 
     def _get_frequency_layer(self, frequency: float) -> int:
         """
@@ -199,7 +184,7 @@ class SmartWattsFormula:
         :param msr: MSR events group of System target
         :return: Average frequency of the Package
         """
-        return (2100 * system_msr['APERF']) / system_msr['MPERF']  # TODO: the base frequency should not be hardcoded
+        return (self.cpu_topology.freq_base * system_msr['APERF']) / system_msr['MPERF']
 
     def get_power_model(self, system_core: Dict[str, int]) -> PowerModel:
         """

@@ -26,8 +26,8 @@ from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
 
-from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, OutOfRangeFrequencyException, \
-    PowerModel
+from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
+from smartwatts.topology import CpuTopology
 
 
 class FormulaScope(Enum):
@@ -43,7 +43,7 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float):
+    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CpuTopology):
         self.sensor = sensor
         self.power_report_pusher = power_report_pusher
         self.formula_report_pusher = formula_report_pusher
@@ -52,7 +52,7 @@ class ReportHandler(Handler):
         self.rapl_event = rapl_event
         self.error_threshold = error_threshold
         self.ticks = OrderedDict()
-        self.formula = SmartWattsFormula()
+        self.formula = SmartWattsFormula(cpu_topology)
 
     def _gen_rapl_events_group(self, system_report: HWPCReport) -> Dict[str, float]:
         """
@@ -78,20 +78,6 @@ class ReportHandler(Handler):
                 msr_events_count[event_name] += 1
 
         return {k: (v / msr_events_count[k]) for k, v in msr_events_group.items()}
-
-    def _gen_pcu_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
-        """
-        Generate an events group with PCU events for the current socket.
-        :param system_report: The HWPC report of the System target
-        :return: A dictionary containing the PCU events of the current socket
-        """
-        pcu_events_group = {}
-        cpu_events = next(iter(system_report.groups['pcu'][self.socket].values()))
-        cpu_events = {k: v for k, v in cpu_events.items() if not k.startswith('time_')}
-        for event_name, event_value in cpu_events.items():
-            pcu_events_group[event_name] = event_value
-
-        return pcu_events_group
 
     def _gen_core_events_group(self, report: HWPCReport) -> Dict[str, int]:
         """
@@ -135,9 +121,10 @@ class ReportHandler(Handler):
     def _gen_formula_report(self, timestamp: datetime, pkg_frequency: float, model: PowerModel, error: float) -> FormulaReport:
         """
         Generate a formula report using the given parameters.
-        :param timestamp:
-        :param target:
-        :param model:
+        :param timestamp: Timestamp of the measurements
+        :param target: Target name
+        :param model: Power model used for the estimation
+        :param error: Error rate of the model
         :return:
         """
         metadata = {
@@ -169,7 +156,6 @@ class ReportHandler(Handler):
             return power_reports, formula_reports
 
         rapl = self._gen_rapl_events_group(global_report)
-        pcu = self._gen_pcu_events_group(global_report)
         avg_msr = self._gen_msr_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
@@ -178,15 +164,12 @@ class ReportHandler(Handler):
         power_reports.append(self._gen_power_report(timestamp, 'rapl', self.rapl_event, rapl_power, 1.0))
 
         # fetch power model to use
-        try:
-            pkg_frequency = self.formula._compute_pkg_frequency(avg_msr)
-            model = self.formula.get_power_model(avg_msr)
-        except OutOfRangeFrequencyException:
-            return power_reports, formula_reports
+        pkg_frequency = self.formula._compute_pkg_frequency(avg_msr)
+        model = self.formula.get_power_model(avg_msr)
 
         # compute Global target power report
         try:
-            system_power = model.compute_global_power_estimation(rapl, pcu, global_core)
+            system_power = model.compute_global_power_estimation(rapl, global_core)
             power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power, 1.0))
         except PowerModelNotInitializedException:
             return power_reports, formula_reports
@@ -194,7 +177,7 @@ class ReportHandler(Handler):
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power, target_ratio = model.compute_target_power_estimation(rapl, pcu, global_core, target_core)
+            target_power, target_ratio = model.compute_target_power_estimation(rapl, global_core, target_core)
             power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power, target_ratio))
 
         # compute power model error from reference
@@ -202,7 +185,7 @@ class ReportHandler(Handler):
 
         # store Global report if the power model error exceeds the error threshold
         if model_error > self.error_threshold:
-            model.store(rapl, pcu, global_core)
+            model.store(rapl, global_core)
 
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))
@@ -220,7 +203,7 @@ class ReportHandler(Handler):
         self.ticks.setdefault(report.timestamp, {}).update({report.target: report})
 
         # start to process the oldest tick only after receiving at least 5 ticks.
-        # we delay the processing of the ticks in order to mitigate the possible slowiness of the sensor/database.
+        # we wait before processing the ticks in order to mitigate the possible delay of the sensor/database.
         if len(self.ticks) > 5:
             power_reports, formula_reports = self._process_oldest_tick()
 
