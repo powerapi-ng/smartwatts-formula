@@ -44,6 +44,17 @@ class ReportHandler(Handler):
     """
 
     def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+        """
+        Initialize a new report handler
+        :param sensor: Name of the sensor
+        :param power_report_pusher: Pusher for the power reports
+        :param formula_report_pusher: Pusher for the formula reports
+        :param socket: Socket id
+        :param scope: Scope of the formula
+        :param rapl_event: RAPL base event
+        :param error_threshold: Error threshold (in Watt)
+        :param cpu_topology: CPU topology to use
+        """
         self.sensor = sensor
         self.power_report_pusher = power_report_pusher
         self.formula_report_pusher = formula_report_pusher
@@ -66,9 +77,9 @@ class ReportHandler(Handler):
 
     def _gen_msr_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
         """
-        Generate an events group with the MSR counters for the current socket.
+        Generate an events group with the average of the MSR counters for the current socket.
         :param system_report: The HWPC report of the System target
-        :return: A dictionary containing the MSR counters.
+        :return: A dictionary containing the average of the MSR counters
         """
         msr_events_group = defaultdict(int)
         msr_events_count = defaultdict(int)
@@ -113,7 +124,7 @@ class ReportHandler(Handler):
         :param target: Target name
         :param formula: Formula identifier
         :param power: Power estimation
-        :return: A PowerReport filled with the given parameters
+        :return: Power report filled with the given parameters
         """
         metadata = {'scope': self.scope.value, 'socket': self.socket, 'formula': formula, 'ratio': ratio}
         return PowerReport(timestamp, self.sensor, target, power, metadata)
@@ -122,10 +133,10 @@ class ReportHandler(Handler):
         """
         Generate a formula report using the given parameters.
         :param timestamp: Timestamp of the measurements
-        :param target: Target name
+        :param pkg_frequency: Package average frequency
         :param model: Power model used for the estimation
         :param error: Error rate of the model
-        :return:
+        :return: Formula report filled with the given parameters
         """
         metadata = {
             'scope': self.scope.value,
@@ -196,7 +207,6 @@ class ReportHandler(Handler):
         """
         Process the received report and trigger the processing of the old ticks.
         :param report: HWPC report of a target
-        :return: Nothing
         """
 
         # store the received report into the tick's bucket

@@ -45,6 +45,11 @@ class ReportWrapper:
     """
 
     def __init__(self, rapl: Dict[str, float], core: Dict[str, int]) -> None:
+        """
+        Initialize a new report wrapper.
+        :param rapl: RAPL event group
+        :param core: Core event group
+        """
         self.rapl = rapl
         self.core = core
 
@@ -69,6 +74,10 @@ class PowerModel:
     """
 
     def __init__(self, frequency: int) -> None:
+        """
+        Initialize a new power model.
+        :param frequency: Frequency of the power model
+        """
         self.frequency = frequency
         self.model: Union[Ridge, None] = None
         self.hash: str = 'uninitialized'
@@ -154,6 +163,10 @@ class SmartWattsFormula:
     """
 
     def __init__(self, cpu_topology: CPUTopology) -> None:
+        """
+        Initialize a new formula.
+        :param cpu_topology: CPU topology to use
+        """
         self.cpu_topology = cpu_topology
         self.models = self._gen_models_dict()
 

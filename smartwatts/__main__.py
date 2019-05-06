@@ -36,12 +36,6 @@ from smartwatts.actor import FormulaScope, SmartWattsFormulaActor
 from smartwatts.topology import CPUTopology
 
 
-class BadActorInitializationError(Exception):
-    """
-    Error if actor doesn't answer with "OKMessage"
-    """
-
-
 def parse_cli_args():
     """
     Parse the CLI arguments.
@@ -85,7 +79,6 @@ def run_smartwatts(args, logger):
     Run PowerAPI with the SmartWatts formula.
     :param args: CLI arguments namespace
     :param logger: Log level to use for the actors
-    :return: Nothing
     """
 
     # Print configuration

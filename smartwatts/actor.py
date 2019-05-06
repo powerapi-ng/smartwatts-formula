@@ -34,9 +34,14 @@ class SmartWattsFormulaActor(FormulaActor):
 
     def __init__(self, name, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
         """
-        Initialize the actor.
-        :param name: Name of the formula
-        :param pusher: Pusher to whom the formula must send its reports
+        Initialize a new actor.
+        :param name: Name of the actor
+        :param power_report_pusher: Pusher for the power reports
+        :param formula_report_pusher: Pusher for the formula reports
+        :param scope: Scope of the formula
+        :param rapl_event: RAPL event to use for reference power consumption
+        :param error_threshold: Error threshold triggering the learning
+        :param cpu_topology: CPU topology to use
         """
         FormulaActor.__init__(self, name, power_report_pusher, logging.WARNING)
         self.scope = scope
