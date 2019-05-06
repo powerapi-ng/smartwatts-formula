@@ -24,7 +24,7 @@ from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
 from smartwatts.handler import ReportHandler, FormulaScope
-from smartwatts.topology import CpuTopology
+from smartwatts.topology import CPUTopology
 
 
 class SmartWattsFormulaActor(FormulaActor):
@@ -32,7 +32,7 @@ class SmartWattsFormulaActor(FormulaActor):
     This actor handle the reports for the SmartWatts formula.
     """
 
-    def __init__(self, name, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CpuTopology):
+    def __init__(self, name, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
         """
         Initialize the actor.
         :param name: Name of the formula

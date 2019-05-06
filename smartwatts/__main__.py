@@ -33,7 +33,7 @@ from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import FormulaScope, SmartWattsFormulaActor
-from smartwatts.topology import CpuTopology
+from smartwatts.topology import CPUTopology
 
 
 class BadActorInitializationError(Exception):
@@ -65,12 +65,12 @@ def parse_cli_args():
 
     # CPU topology information
     parser.add_argument('--cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
-    parser.add_argument('--cpu-freq-min', help='CPU minimal frequency (in kHz)', type=int, default=1000)
-    parser.add_argument('--cpu-freq-base', help='CPU base frequency (in kHz)', type=int, default=2300)
-    parser.add_argument('--cpu-freq-max', help='CPU maximal frequency (in kHz)', type=int, default=3800)
+    parser.add_argument('--cpu-ratio-min', help='CPU minimal frequency ratio', type=int, default=10)
+    parser.add_argument('--cpu-ratio-base', help='CPU base frequency ratio', type=int, default=23)
+    parser.add_argument('--cpu-ratio-max', help='CPU maximal frequency ratio (with Turbo-Boost)', type=int, default=40)
 
     # Formula error threshold
-    parser.add_argument('--cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=5.0)
+    parser.add_argument('--cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=2.0)
     parser.add_argument('--dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float, default=2.0)
 
     # Debug options
@@ -100,7 +100,7 @@ def run_smartwatts(args, logger):
     formula_report_pusher = PusherActor('formula_report_pusher', FormulaReport, formula_output_mongodb)
 
     # CPU topology information
-    cpu_topology = CpuTopology(args.cpu_base_clock, args.cpu_freq_min, args.cpu_freq_base, args.cpu_freq_max)
+    cpu_topology = CPUTopology(args.cpu_base_clock, args.cpu_ratio_min, args.cpu_ratio_base, args.cpu_ratio_max)
 
     # Sensor reports route table
     route_table = RouteTable()

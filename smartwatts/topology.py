@@ -17,27 +17,48 @@
 from typing import List
 
 
-class CpuTopology:
+class CPUTopology:
     """
     This class stores the necessary information about the CPU topology.
     """
 
-    def __init__(self, freq_bclk: int, freq_min: int, freq_base: int, freq_max: int) -> None:
+    def __init__(self, freq_bclk: int, ratio_min: int, ratio_base: int, ratio_max: int) -> None:
         """
         Create a new CPU topology object.
         :param freq_bclk: Base clock in MHz
-        :param freq_min: Minimal frequency (MEF) in kHz
-        :param freq_base: Base frequency in kHz
-        :param freq_max: Maximum frequency in kHz
+        :param ratio_min: Maximum efficiency ratio
+        :param ratio_base: Base frequency ratio
+        :param ratio_max: Maximum frequency ratio (with Turbo-Boost)
         """
         self.freq_bclk = freq_bclk
-        self.freq_min = freq_min
-        self.freq_base = freq_base
-        self.freq_max = freq_max
+        self.ratio_min = ratio_min
+        self.ratio_base = ratio_base
+        self.ratio_max = ratio_max
+
+    def get_min_frequency(self) -> int:
+        """
+        Compute and return the CPU max efficiency frequency.
+        :return: The CPU max efficiency frequency in MHz
+        """
+        return self.freq_bclk * self.ratio_min
+
+    def get_base_frequency(self) -> int:
+        """
+        Compute and return the CPU base frequency.
+        :return: The CPU base frequency in MHz
+        """
+        return self.freq_bclk * self.ratio_base
+
+    def get_max_frequency(self) -> int:
+        """
+        Compute and return the CPU maximum frequency. (Turbo-Boost included)
+        :return: The CPU maximum frequency in MHz
+        """
+        return self.freq_bclk * self.ratio_max
 
     def get_supported_frequencies(self) -> List[int]:
         """
-        Compute the available frequencies for this CPU.
-        :return: A list of supported frequencies in kHz
+        Compute the supported frequencies for this CPU.
+        :return: A list of supported frequencies in MHz
         """
-        return [frequency for frequency in range(self.freq_min, self.freq_max + 1, self.freq_bclk)]
+        return [freq for freq in range(self.get_min_frequency(), self.get_max_frequency() + 1, self.freq_bclk)]

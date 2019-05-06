@@ -27,7 +27,7 @@ from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
 
 from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
-from smartwatts.topology import CpuTopology
+from smartwatts.topology import CPUTopology
 
 
 class FormulaScope(Enum):
@@ -43,7 +43,7 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CpuTopology):
+    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
         self.sensor = sensor
         self.power_report_pusher = power_report_pusher
         self.formula_report_pusher = formula_report_pusher

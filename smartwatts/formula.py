@@ -25,7 +25,7 @@ from typing import List, Dict, Union
 from scipy.linalg import LinAlgWarning
 from sklearn.linear_model import Ridge
 
-from smartwatts.topology import CpuTopology
+from smartwatts.topology import CPUTopology
 
 # make scikit-learn more silent
 warnings.filterwarnings('ignore', category=LinAlgWarning)
@@ -153,7 +153,7 @@ class SmartWattsFormula:
     This formula compute per-target power estimations using hardware performance counters.
     """
 
-    def __init__(self, cpu_topology: CpuTopology) -> None:
+    def __init__(self, cpu_topology: CPUTopology) -> None:
         self.cpu_topology = cpu_topology
         self.models = self._gen_models_dict()
 
@@ -184,7 +184,7 @@ class SmartWattsFormula:
         :param msr: MSR events group of System target
         :return: Average frequency of the Package
         """
-        return (self.cpu_topology.freq_base * system_msr['APERF']) / system_msr['MPERF']
+        return (self.cpu_topology.get_base_frequency() * system_msr['APERF']) / system_msr['MPERF']
 
     def get_power_model(self, system_core: Dict[str, int]) -> PowerModel:
         """
