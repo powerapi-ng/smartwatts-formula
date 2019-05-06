@@ -126,7 +126,12 @@ class ReportHandler(Handler):
         :param power: Power estimation
         :return: Power report filled with the given parameters
         """
-        metadata = {'scope': self.scope.value, 'socket': self.socket, 'formula': formula, 'ratio': ratio}
+        metadata = {
+            'scope': self.scope.value,
+            'socket': self.socket,
+            'formula': formula,
+            'ratio': ratio
+        }
         return PowerReport(timestamp, self.sensor, target, power, metadata)
 
     def _gen_formula_report(self, timestamp: datetime, pkg_frequency: float, model: PowerModel, error: float) -> FormulaReport:
