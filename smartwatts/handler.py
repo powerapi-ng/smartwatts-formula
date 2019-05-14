@@ -22,12 +22,11 @@ from typing import Dict, List
 
 from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
-from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
 
+from smartwatts.actor import SmartWattsFormulaState
 from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
-from smartwatts.topology import CPUTopology
 
 
 class FormulaScope(Enum):
@@ -43,27 +42,15 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, sensor: str, power_report_pusher: PusherActor, formula_report_pusher: PusherActor, socket: str, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+    def __init__(self, state: SmartWattsFormulaState):
         """
-        Initialize a new report handler
-        :param sensor: Name of the sensor
-        :param power_report_pusher: Pusher for the power reports
-        :param formula_report_pusher: Pusher for the formula reports
-        :param socket: Socket id
-        :param scope: Scope of the formula
-        :param rapl_event: RAPL base event
-        :param error_threshold: Error threshold (in Watt)
-        :param cpu_topology: CPU topology to use
+        Initialize a new report handler.
+        :param state: State of the actor
         """
-        self.sensor = sensor
-        self.power_report_pusher = power_report_pusher
-        self.formula_report_pusher = formula_report_pusher
-        self.socket = socket
-        self.scope = scope
-        self.rapl_event = rapl_event
-        self.error_threshold = error_threshold
+        Handler.__init__(self, state)
+        self.state = state
         self.ticks = OrderedDict()
-        self.formula = SmartWattsFormula(cpu_topology)
+        self.formula = SmartWattsFormula(state.config.cpu_topology)
 
     def _gen_rapl_events_group(self, system_report: HWPCReport) -> Dict[str, float]:
         """
@@ -71,9 +58,9 @@ class ReportHandler(Handler):
         :param system_report: The HWPC report of the System target
         :return: A dictionary containing the RAPL reference event with its value converted in Watts
         """
-        cpu_events = next(iter(system_report.groups['rapl'][self.socket].values()))
-        energy = ldexp(cpu_events[self.rapl_event], -32)
-        return {self.rapl_event: energy}
+        cpu_events = next(iter(system_report.groups['rapl'][self.state.socket].values()))
+        energy = ldexp(cpu_events[self.state.config.rapl_event], -32)
+        return {self.state.config.rapl_event: energy}
 
     def _gen_msr_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
         """
@@ -83,7 +70,7 @@ class ReportHandler(Handler):
         """
         msr_events_group = defaultdict(int)
         msr_events_count = defaultdict(int)
-        for _, cpu_events in system_report.groups['msr'][self.socket].items():
+        for _, cpu_events in system_report.groups['msr'][self.state.socket].items():
             for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
                 msr_events_group[event_name] += event_value
                 msr_events_count[event_name] += 1
@@ -98,7 +85,7 @@ class ReportHandler(Handler):
         :return: A dictionary containing the Core events of the current socket
         """
         core_events_group = defaultdict(int)
-        for _, cpu_events in report.groups['core'][self.socket].items():
+        for _, cpu_events in report.groups['core'][self.state.socket].items():
             for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
                 core_events_group[event_name] += event_value
 
@@ -127,12 +114,12 @@ class ReportHandler(Handler):
         :return: Power report filled with the given parameters
         """
         metadata = {
-            'scope': self.scope.value,
-            'socket': self.socket,
+            'scope': self.state.config.scope.value,
+            'socket': self.state.socket,
             'formula': formula,
             'ratio': ratio
         }
-        return PowerReport(timestamp, self.sensor, target, power, metadata)
+        return PowerReport(timestamp, self.state.sensor, target, power, metadata)
 
     def _gen_formula_report(self, timestamp: datetime, pkg_frequency: float, model: PowerModel, error: float) -> FormulaReport:
         """
@@ -144,14 +131,14 @@ class ReportHandler(Handler):
         :return: Formula report filled with the given parameters
         """
         metadata = {
-            'scope': self.scope.value,
-            'socket': self.socket,
+            'scope': self.state.config.scope.value,
+            'socket': self.state.socket,
             'layer_frequency': model.frequency,
             'pkg_frequency': pkg_frequency,
             'reports': len(model.reports),
             'error': error
         }
-        return FormulaReport(timestamp, self.sensor, model.hash, metadata)
+        return FormulaReport(timestamp, self.state.sensor, model.hash, metadata)
 
     def _process_oldest_tick(self) -> (List[PowerReport], List[FormulaReport]):
         """
@@ -176,8 +163,8 @@ class ReportHandler(Handler):
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
         # compute RAPL power report
-        rapl_power = rapl[self.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.rapl_event, rapl_power, 1.0))
+        rapl_power = rapl[self.state.config.rapl_event]
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, rapl_power, 1.0))
 
         # fetch power model to use
         pkg_frequency = self.formula._compute_pkg_frequency(avg_msr)
@@ -200,7 +187,7 @@ class ReportHandler(Handler):
         model_error = fabs(rapl_power - system_power)
 
         # store Global report if the power model error exceeds the error threshold
-        if model_error > self.error_threshold:
+        if model_error > self.state.config.error_threshold:
             model.store(rapl, global_core)
 
         # store information about the power model used for this tick
@@ -224,13 +211,13 @@ class ReportHandler(Handler):
 
             # store power reports
             for power_report in power_reports:
-                self.power_report_pusher.send_data(power_report)
+                self.state.pushers['power'].send_data(power_report)
 
             # store formula reports
             for formula_report in formula_reports:
-                self.formula_report_pusher.send_data(formula_report)
+                self.state.pushers['formula'].send_data(formula_report)
 
-    def handle(self, msg, state):
+    def handle(self, msg):
         """
         Process a report and send the result(s) to a pusher actor.
         :param msg: Received message
@@ -242,5 +229,3 @@ class ReportHandler(Handler):
             raise UnknowMessageTypeException(type(msg))
 
         self._process_report(msg)
-
-        return state
