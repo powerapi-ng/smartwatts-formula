@@ -32,7 +32,7 @@ from powerapi.report.formula_report import FormulaReport
 from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
-from smartwatts.actor import FormulaScope, SmartWattsFormulaActor
+from smartwatts.actor import FormulaScope, SmartWattsFormulaActor, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
 
 
@@ -92,34 +92,25 @@ def run_smartwatts(args, logger):
     formula_output_mongodb = MongoDB(args.mongodb_uri, args.mongodb_database, args.mongodb_formula_collection, None)
     formula_report_pusher = PusherActor('formula_report_pusher', FormulaReport, formula_output_mongodb)
 
-    # CPU topology information
-    cpu_topology = CPUTopology(args.cpu_base_clock, args.cpu_ratio_min, args.cpu_ratio_base, args.cpu_ratio_max)
-
     # Sensor reports route table
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
+    # Shared parameters
+    pushers = {'power': power_report_pusher, 'formula': formula_report_pusher}
+    cpu_topology = CPUTopology(args.cpu_base_clock, args.cpu_ratio_min, args.cpu_ratio_base, args.cpu_ratio_max)
+
     # CPU formula dispatcher
     def cpu_formula_factory(name: str, _):
-        return SmartWattsFormulaActor(name,
-                                      power_report_pusher,
-                                      formula_report_pusher,
-                                      FormulaScope.CPU,
-                                      args.cpu_rapl_ref_event,
-                                      args.cpu_error_threshold,
-                                      cpu_topology)
+        config = SmartWattsFormulaConfig(FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
+        return SmartWattsFormulaActor(name, pushers, config)
 
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, route_table)
 
     # DRAM formula dispatcher
     def dram_formula_factory(name: str, _):
-        return SmartWattsFormulaActor(name,
-                                      power_report_pusher,
-                                      formula_report_pusher,
-                                      FormulaScope.DRAM,
-                                      args.dram_rapl_ref_event,
-                                      args.dram_error_threshold,
-                                      cpu_topology)
+        config = SmartWattsFormulaConfig(FormulaScope.DRAM, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
+        return SmartWattsFormulaActor(name, pushers, config)
 
     dram_dispatcher = DispatcherActor('dram_dispatcher', dram_formula_factory, route_table)
 
