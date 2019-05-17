@@ -86,7 +86,6 @@ class PowerModel:
     def _learn(self) -> None:
         """
         Learn a new power model using the stored reports and update the formula hash.
-        :return: Nothing
         """
         X = []
         y = []
@@ -102,7 +101,6 @@ class PowerModel:
         Store the events group into the System reports list and learn a new power model.
         :param rapl: RAPL events group
         :param global_core: Core events group of all targets
-        :return: Nothing
         """
         self.reports.append(ReportWrapper(rapl, global_core))
 
@@ -114,7 +112,7 @@ class PowerModel:
         Compute the global power estimation using the power model.
         :param rapl: RAPL events group
         :param global_core: Core events group of all targets
-        :return:
+        :return: Power estimation of all running targets using the power model
         """
         if not self.model:
             self.store(rapl, global_core)
@@ -129,7 +127,7 @@ class PowerModel:
         :param rapl: RAPL events group
         :param global_core: Core events group of all targets
         :param target_core: Core events group of any target
-        :return: Power estimation for the given target
+        :return: Power estimation for the given target and ratio of the target on the global power consumption
         :raise: PowerModelNotInitializedException when the power model is not initialized
         """
         if not self.model:
