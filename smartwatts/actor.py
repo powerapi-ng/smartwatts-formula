@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import re
+from enum import Enum
 from typing import Dict
 
 from powerapi.formula import FormulaActor, FormulaState
@@ -26,8 +27,16 @@ from powerapi.message import PoisonPillMessage
 from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
-from smartwatts.handler import ReportHandler, FormulaScope
+from smartwatts.handler import ReportHandler
 from smartwatts.topology import CPUTopology
+
+
+class SmartWattsFormulaScope(Enum):
+    """
+    Enum used to set the scope of the SmartWatts formula.
+    """
+    CPU = "cpu"
+    DRAM = "dram"
 
 
 class SmartWattsFormulaConfig:
@@ -35,7 +44,7 @@ class SmartWattsFormulaConfig:
     Global config of the SmartWatts formula.
     """
 
-    def __init__(self, scope: FormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+    def __init__(self, scope: SmartWattsFormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
         self.scope = scope
         self.rapl_event = rapl_event
         self.error_threshold = error_threshold
@@ -64,14 +73,10 @@ class SmartWattsFormulaActor(FormulaActor):
 
     def __init__(self, name: str, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig):
         """
-        Initialize a new actor.
+        Initialize new SmartWatts formula actor.
         :param name: Name of the actor
-        :param power_report_pusher: Pusher for the power reports
-        :param formula_report_pusher: Pusher for the formula reports
-        :param scope: Scope of the formula
-        :param rapl_event: RAPL event to use for reference power consumption
-        :param error_threshold: Error threshold triggering the learning
-        :param cpu_topology: CPU topology to use
+        :param pushers: Pusher actors
+        :param config: Configuration of the formula
         """
         FormulaActor.__init__(self, name, pushers, logging.WARNING)
         self.state: SmartWattsFormulaState = SmartWattsFormulaState(self, pushers, config)

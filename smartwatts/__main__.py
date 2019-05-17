@@ -32,7 +32,7 @@ from powerapi.report.formula_report import FormulaReport
 from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
-from smartwatts.actor import FormulaScope, SmartWattsFormulaActor, SmartWattsFormulaConfig
+from smartwatts.actor import SmartWattsFormulaScope, SmartWattsFormulaActor, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
 
 
@@ -102,14 +102,16 @@ def run_smartwatts(args, logger):
 
     # CPU formula dispatcher
     def cpu_formula_factory(name: str, _):
-        config = SmartWattsFormulaConfig(FormulaScope.CPU, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
+        scope = SmartWattsFormulaScope.CPU
+        config = SmartWattsFormulaConfig(scope, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
         return SmartWattsFormulaActor(name, pushers, config)
 
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, route_table)
 
     # DRAM formula dispatcher
     def dram_formula_factory(name: str, _):
-        config = SmartWattsFormulaConfig(FormulaScope.DRAM, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
+        scope = SmartWattsFormulaScope.DRAM
+        config = SmartWattsFormulaConfig(scope, args.cpu_rapl_ref_event, args.cpu_error_threshold, cpu_topology)
         return SmartWattsFormulaActor(name, pushers, config)
 
     dram_dispatcher = DispatcherActor('dram_dispatcher', dram_formula_factory, route_table)

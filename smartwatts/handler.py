@@ -16,7 +16,6 @@
 
 from collections import OrderedDict, defaultdict
 from datetime import datetime
-from enum import Enum
 from math import ldexp, fabs
 from typing import Dict, List
 
@@ -27,14 +26,6 @@ from powerapi.report.formula_report import FormulaReport
 
 from smartwatts.actor import SmartWattsFormulaState
 from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
-
-
-class FormulaScope(Enum):
-    """
-    Enum used to set the scope of the formula.
-    """
-    CPU = "cpu"
-    DRAM = "dram"
 
 
 class ReportHandler(Handler):
