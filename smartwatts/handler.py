@@ -24,6 +24,7 @@ from powerapi.message import UnknowMessageTypeException
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
 
+from smartwatts.context import SmartWattsFormulaState
 from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
 
 
@@ -32,7 +33,7 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, state):
+    def __init__(self, state: SmartWattsFormulaState):
         """
         Initialize a new report handler.
         :param state: State of the actor

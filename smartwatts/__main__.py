@@ -32,7 +32,8 @@ from powerapi.report.formula_report import FormulaReport
 from powerapi.report_model import HWPCModel
 
 from smartwatts import __version__ as smartwatts_version
-from smartwatts.actor import SmartWattsFormulaScope, SmartWattsFormulaActor, SmartWattsFormulaConfig
+from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaConfig
+from smartwatts.context import SmartWattsFormulaScope
 from smartwatts.topology import CPUTopology
 
 
