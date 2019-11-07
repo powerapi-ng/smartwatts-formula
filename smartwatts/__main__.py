@@ -49,6 +49,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     parser.add_argument('dram-rapl-ref-event', help='RAPL event used as reference for the DRAM power models', default='RAPL_ENERGY_DRAM')
 
     # CPU topology information
+    parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=0)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
     parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio', type=int, default=10)
     parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio', type=int, default=23)
@@ -64,7 +65,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     return parser
 
 
-def setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers):
+def setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers) -> DispatcherActor:
     """
     Setup CPU formula actor.
     :param fconf: Global configuration
@@ -83,7 +84,7 @@ def setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pus
     return cpu_dispatcher
 
 
-def setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers):
+def setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers) -> DispatcherActor:
     """
     Setup DRAM formula actor.
     :param fconf: Global configuration
@@ -103,11 +104,11 @@ def setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pu
     return dram_dispatcher
 
 
-def run_smartwatts(args, logger):
+def run_smartwatts(args, logger) -> None:
     """
     Run PowerAPI with the SmartWatts formula.
     :param args: CLI arguments namespace
-    :param logger: Log level to use for the actors
+    :param logger: Logger to use for the actors
     """
     fconf = args['formula']['smartwatts']
     actors = []
@@ -117,7 +118,7 @@ def run_smartwatts(args, logger):
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
-    cpu_topology = CPUTopology(fconf['cpu-base-clock'], fconf['cpu-ratio-min'], fconf['cpu-ratio-base'], fconf['cpu-ratio-max'])
+    cpu_topology = CPUTopology(fconf['cpu-tdp'], fconf['cpu-base-clock'], fconf['cpu-ratio-min'], fconf['cpu-ratio-base'], fconf['cpu-ratio-max'])
     report_filter = Filter()
 
     pushers = PusherGenerator().generate(args)
