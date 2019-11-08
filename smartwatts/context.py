@@ -21,8 +21,17 @@ class SmartWattsFormulaConfig:
     Global config of the SmartWatts formula.
     """
 
-    def __init__(self, scope: SmartWattsFormulaScope, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+    def __init__(self, scope: SmartWattsFormulaScope, reports_frequency: int, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+        """
+        Initialize a new formula config object.
+        :param scope: Scope of the formula
+        :param reports_frequency: Frequency at which the reports (in milliseconds)
+        :param rapl_event: RAPL event to use as reference
+        :param error_threshold: Error threshold (in Watt)
+        :param cpu_topology: Topology of the CPU
+        """
         self.scope = scope
+        self.reports_frequency = reports_frequency
         self.rapl_event = rapl_event
         self.error_threshold = error_threshold
         self.cpu_topology = cpu_topology
@@ -34,6 +43,12 @@ class SmartWattsFormulaState(FormulaState):
     """
 
     def __init__(self, actor: FormulaActor, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig):
+        """
+        Initialize a new formula state object.
+        :param actor: Actor of the formula
+        :param pushers: Dictionary of available pushers
+        :param config: Configuration of the formula
+        """
         FormulaState.__init__(self, actor, pushers)
         self.config = config
 

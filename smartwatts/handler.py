@@ -50,7 +50,7 @@ class ReportHandler(Handler):
         :return: A dictionary containing the RAPL reference event with its value converted in Watts
         """
         cpu_events = next(iter(system_report.groups['rapl'][self.state.socket].values()))
-        energy = ldexp(cpu_events[self.state.config.rapl_event], -32)
+        energy = ldexp(cpu_events[self.state.config.rapl_event], -32) / (self.state.config.reports_frequency / 1000)
         return {self.state.config.rapl_event: energy}
 
     def _gen_msr_events_group(self, system_report: HWPCReport) -> Dict[str, int]:

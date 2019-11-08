@@ -76,7 +76,8 @@ def setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pus
     :return: Initialized CPU dispatcher actor
     """
     def cpu_formula_factory(name: str, _):
-        config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology)
+        scope = SmartWattsFormulaScope.CPU
+        config = SmartWattsFormulaConfig(scope, fconf['reports-frequency'], fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology)
         return SmartWattsFormulaActor(name, pushers, config)
 
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, route_table)
@@ -96,7 +97,7 @@ def setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pu
     """
     def dram_formula_factory(name: str, _):
         scope = SmartWattsFormulaScope.DRAM
-        config = SmartWattsFormulaConfig(scope, fconf['dram-rapl-ref-event'], fconf['dram-error-threshold'], cpu_topology)
+        config = SmartWattsFormulaConfig(scope, fconf['reports-frequency'], fconf['dram-rapl-ref-event'], fconf['dram-error-threshold'], cpu_topology)
         return SmartWattsFormulaActor(name, pushers, config)
 
     dram_dispatcher = DispatcherActor('dram_dispatcher', dram_formula_factory, route_table)
