@@ -20,7 +20,7 @@ import signal
 from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
 from powerapi.backendsupervisor import BackendSupervisor
-from powerapi.cli.parser import ComponentSubParser
+from powerapi.cli.parser import ComponentSubParser, store_true
 from powerapi.cli.tools import CommonCLIParser, PusherGenerator, PullerGenerator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
@@ -41,8 +41,8 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     parser = ComponentSubParser('smartwatts')
 
     # Formula control parameters
-    parser.add_argument('disable-cpu-formula', help='', type=bool, default=False)
-    parser.add_argument('disable-dram-formula', help='', type=bool, default=False)
+    parser.add_argument('disable-cpu-formula', flag=True, action=store_true, default=False, help='')
+    parser.add_argument('disable-dram-formula', flag=True, action=store_true, default=False, help='')
 
     # Formula RAPL reference event
     parser.add_argument('cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models', default='RAPL_ENERGY_PKG')
@@ -123,20 +123,20 @@ def run_smartwatts(args, logger) -> None:
     report_filter = Filter()
 
     pushers = PusherGenerator().generate(args)
-    actors += pushers
+    actors += list(pushers.values())
 
     logger.info('CPU formula is %s' % ('DISABLED' if fconf['disable-cpu-formula'] else 'ENABLED'))
     if not fconf['disable-cpu-formula']:
         logger.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold']))
-        actors += setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
+        actors.append(setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers))
 
     logger.info('DRAM formula is %s' % ('DISABLED' if fconf['disable-dram-formula'] else 'ENABLED'))
     if not fconf['disable-dram-formula']:
         logger.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (fconf['dram-rapl-ref-event'], fconf['dram-error-threshold']))
-        actors += setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
+        actors.append(setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers))
 
     pullers = PullerGenerator(report_filter).generate(args)
-    actors += pullers
+    actors += list(pullers.values())
 
     def term_handler(_, __):
         for actor in actors:
