@@ -39,33 +39,40 @@ class PowerModelNotInitializedException(Exception):
     pass
 
 
-class ReportWrapper:
+class NotEnoughReportsInHistoryException(Exception):
     """
-    This wrapper stores the needed information for a System report and ease its usage when learning a power model.
+    This exception happens when a user try to learn a power model without having enough reports in history.
+    """
+    pass
+
+
+class History:
+    """
+    This class stores the reports history to use when learning a new power model.
     """
 
-    def __init__(self, rapl: Dict[str, float], core: Dict[str, int]) -> None:
+    def __init__(self) -> None:
         """
-        Initialize a new report wrapper.
-        :param rapl: RAPL event group
-        :param core: Core event group
+        Initialize a new reports history container.
         """
-        self.rapl = rapl
-        self.core = core
+        self.X: List[List[int]] = []
+        self.y: List[float] = []
 
-    def X(self) -> List[int]:
+    def __len__(self) -> int:
         """
-        Creates and return a list of events value from the Core events group.
-        :return: List containing the Core events value sorted by event name.
+        Compute the length of the history.
+        :return: Length of the history
         """
-        return [v for _, v in sorted(self.core.items())]
+        return len(self.X)
 
-    def y(self) -> List[float]:
+    def store_report(self, power_reference: float, events_value: List[int]) -> None:
         """
-        Creates and return a list of events value from the RAPL events group.
-        :return: List containing the RAPL events value.
+        Append a report to the reports history.
+        :param events_value: List of raw events value
+        :param power_reference: Power reference corresponding to the events value
         """
-        return [v for _, v in sorted(self.rapl.items())]
+        self.X.append(events_value)
+        self.y.append(power_reference)
 
 
 class PowerModel:
@@ -81,78 +88,62 @@ class PowerModel:
         self.frequency = frequency
         self.model: Union[Ridge, None] = None
         self.hash: str = 'uninitialized'
-        self.reports: List[ReportWrapper] = []
+        self.history: History = History()
+        self.id = 0
 
-    def _learn(self) -> None:
+    def learn_power_model(self) -> None:
         """
         Learn a new power model using the stored reports and update the formula hash.
+        :raise: NotEnoughReportsInHistoryException when trying to learn without enough previous data
         """
-        X = []
-        y = []
-        for report in self.reports:
-            X.append(report.X())
-            y.append(report.y())
+        if len(self.history) < 3:
+            return
 
-        self.model = Ridge().fit(X, y)
+        self.model = Ridge().fit(self.history.X, self.history.y)
         self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
+        self.id += 1
 
-    def store(self, rapl: Dict[str, float], global_core: Dict[str, int]) -> None:
+    @staticmethod
+    def _extract_events_value(events: Dict[str, int]) -> List[int]:
+        """
+        Creates and return a list of events value from the events group.
+        :param events: Events group
+        :return: List containing the events value sorted by event name
+        """
+        return [value for _, value in sorted(events.items())]
+
+    def store_report_in_history(self, power_reference: float, events: Dict[str, int]) -> None:
         """
         Store the events group into the System reports list and learn a new power model.
-        :param rapl: RAPL events group
-        :param global_core: Core events group of all targets
+        :param power_reference: Power reference (in Watt)
+        :param events: Events value
         """
-        self.reports.append(ReportWrapper(rapl, global_core))
+        self.history.store_report(power_reference, self._extract_events_value(events))
 
-        if len(self.reports) > 3:
-            self._learn()
-
-    def compute_global_power_estimation(self, rapl: Dict[str, float], global_core: Dict[str, int]) -> float:
+    def compute_power_estimation(self, events: Dict[str, int]) -> float:
         """
-        Compute the global power estimation using the power model.
-        :param rapl: RAPL events group
-        :param global_core: Core events group of all targets
-        :return: Power estimation of all running targets using the power model
+        Compute a power estimation from the events value using the power model.
+        :param events: Events value
+        :raise: PowerModelNotInitializedException when haven't been initialized
+        :return: Power estimation for the given events value
         """
         if not self.model:
-            self.store(rapl, global_core)
             raise PowerModelNotInitializedException()
 
-        report = ReportWrapper(rapl, global_core)
-        return self.model.predict([report.X()])[0, 0]
+        return self.model.predict([self._extract_events_value(events)])[0]
 
-    def compute_target_power_estimation(self, rapl: Dict[str, float], global_core: Dict[str, int], target_core: Dict[str, int]) -> (float, float):
+    @staticmethod
+    def cap_power_estimation(power_reference: float, global_power: float, target_power: float) -> (float, float):
         """
-        Compute a power estimation for the given target.
-        :param rapl: RAPL events group
-        :param global_core: Core events group of all targets
-        :param target_core: Core events group of any target
-        :return: Power estimation for the given target and ratio of the target on the global power consumption
-        :raise: PowerModelNotInitializedException when the power model is not initialized
+        Cap the target power estimation to the reference power estimation.
+        :param power_reference: Reference power estimation (in Watt, usually RAPL)
+        :param global_power: Global power estimation from the power model (in Watt)
+        :param target_power: Target power estimation from the power model (in Watt)
+        :return: Capped power estimation (in Watt) with its ratio over global power consumption
         """
-        if not self.model:
-            self.store(rapl, global_core)
-            raise PowerModelNotInitializedException()
-
-        ref_power = next(iter(rapl.values()))
-        system = ReportWrapper(rapl, global_core).X()
-        target = ReportWrapper(rapl, target_core).X()
-
-        coefs = next(iter(self.model.coef_))
-        sum_coefs = sum(coefs)
-
-        ratio = 0.0
-        for index, coef in enumerate(coefs):
-            try:
-                ratio += (coef / sum_coefs) * (target[index] / system[index])
-            except ZeroDivisionError:
-                pass
-
-        target_power = ref_power * ratio
-        if target_power < 0.0:
-            return 0.0, 0.0
-
-        return target_power, ratio
+        ratio = target_power / global_power if global_power > 0.0 else 0.0
+        power = power_reference * ratio
+        return power, ratio
 
 
 class SmartWattsFormula:
@@ -171,7 +162,7 @@ class SmartWattsFormula:
     def _gen_models_dict(self) -> Dict[int, PowerModel]:
         """
         Generate and returns a layered container to store per-frequency power models.
-        :return: Initialized Ordered dict containing a power model for each frequency layer.
+        :return: Initialized Ordered dict containing a power model for each frequency layer
         """
         return OrderedDict((freq, PowerModel(freq)) for freq in self.cpu_topology.get_supported_frequencies())
 

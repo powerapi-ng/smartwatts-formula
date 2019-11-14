@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from math import ldexp, fabs
@@ -126,7 +125,8 @@ class ReportHandler(Handler):
             'socket': self.state.socket,
             'layer_frequency': model.frequency,
             'pkg_frequency': pkg_frequency,
-            'reports': len(model.reports),
+            'samples': len(model.history),
+            'id': model.id,
             'error': error
         }
         return FormulaReport(timestamp, self.state.sensor, model.hash, metadata)
@@ -163,15 +163,18 @@ class ReportHandler(Handler):
 
         # compute Global target power report
         try:
-            system_power = model.compute_global_power_estimation(rapl, global_core)
+            system_power = model.compute_power_estimation(global_core)
             power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power, 1.0))
         except PowerModelNotInitializedException:
+            model.store_report_in_history(rapl_power, global_core)
+            model.learn_power_model()
             return power_reports, formula_reports
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power, target_ratio = model.compute_target_power_estimation(rapl, global_core, target_core)
+            target_power = model.compute_power_estimation(target_core)
+            target_power, target_ratio = model.cap_power_estimation(rapl_power, system_power, target_power)
             power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power, target_ratio))
 
         # compute power model error from reference
@@ -179,7 +182,8 @@ class ReportHandler(Handler):
 
         # store Global report if the power model error exceeds the error threshold
         if model_error > self.state.config.error_threshold:
-            model.store(rapl, global_core)
+            model.store_report_in_history(rapl_power, global_core)
+            model.learn_power_model()
 
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))
