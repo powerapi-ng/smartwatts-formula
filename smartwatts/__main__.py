@@ -16,11 +16,12 @@
 
 import logging
 import signal
+from collections import OrderedDict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
 from powerapi.backendsupervisor import BackendSupervisor
-from powerapi.cli.parser import ComponentSubParser
+from powerapi.cli.parser import ComponentSubParser, store_true
 from powerapi.cli.tools import CommonCLIParser, PusherGenerator, PullerGenerator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
@@ -41,8 +42,8 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     parser = ComponentSubParser('smartwatts')
 
     # Formula control parameters
-    parser.add_argument('disable-cpu-formula', help='', type=bool, default=False)
-    parser.add_argument('disable-dram-formula', help='', type=bool, default=False)
+    parser.add_argument('disable-cpu-formula', help='Disable CPU formula', flag=True, type=bool, default=False, action=store_true)
+    parser.add_argument('disable-dram-formula', help='Disable DRAM formula', flag=True, type=bool, default=False, action=store_true)
 
     # Formula RAPL reference event
     parser.add_argument('cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models', default='RAPL_ENERGY_PKG')
@@ -60,7 +61,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float, default=2.0)
 
     # Sensor information
-    parser.add_argument('reports-frequency', help='The frequency with which measurements are made (in milliseconds)', default=1000)
+    parser.add_argument('reports-frequency', help='The frequency with which measurements are made (in milliseconds)', type=int, default=1000)
 
     return parser
 
@@ -112,34 +113,39 @@ def run_smartwatts(args, logger) -> None:
     :param logger: Logger to use for the actors
     """
     fconf = args['formula']['smartwatts']
-    actors = []
 
     logger.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
+
+    if fconf['disable-cpu-formula'] and fconf['disable-dram-formula']:
+        logging.error('You need to enable at least one formula')
+        return
 
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
     cpu_topology = CPUTopology(fconf['cpu-tdp'], fconf['cpu-base-clock'], fconf['cpu-ratio-min'], fconf['cpu-ratio-base'], fconf['cpu-ratio-max'])
+
     report_filter = Filter()
+    pullers = PullerGenerator(report_filter).generate(args)
 
     pushers = PusherGenerator().generate(args)
-    actors += pushers
+
+    dispatchers = {}
 
     logger.info('CPU formula is %s' % ('DISABLED' if fconf['disable-cpu-formula'] else 'ENABLED'))
     if not fconf['disable-cpu-formula']:
         logger.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold']))
-        actors += setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
+        dispatchers['cpu'] = setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
 
     logger.info('DRAM formula is %s' % ('DISABLED' if fconf['disable-dram-formula'] else 'ENABLED'))
     if not fconf['disable-dram-formula']:
         logger.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (fconf['dram-rapl-ref-event'], fconf['dram-error-threshold']))
-        actors += setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
+        dispatchers['dram'] = setup_dram_formula_actor(fconf, route_table, report_filter, cpu_topology, pushers)
 
-    pullers = PullerGenerator(report_filter).generate(args)
-    actors += pullers
+    actors = OrderedDict(**pushers, **dispatchers, **pullers)
 
     def term_handler(_, __):
-        for actor in actors:
+        for _, actor in actors.items():
             actor.soft_kill()
         exit(0)
 
@@ -149,7 +155,7 @@ def run_smartwatts(args, logger) -> None:
     supervisor = BackendSupervisor(config['stream'])
     try:
         logger.info('Starting SmartWatts actors...')
-        for actor in actors:
+        for _, actor in actors.items():
             supervisor.launch_actor(actor)
     except ActorInitError as exn:
         logger.error('Actor initialization error: ' + exn.message)
