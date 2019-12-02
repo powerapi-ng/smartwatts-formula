@@ -204,13 +204,10 @@ class ReportHandler(Handler):
         if len(self.ticks) > 5:
             power_reports, formula_reports = self._process_oldest_tick()
 
-            # store power reports
-            for power_report in power_reports:
-                self.state.pushers['power'].send_data(power_report)
-
-            # store formula reports
-            for formula_report in formula_reports:
-                self.state.pushers['formula'].send_data(formula_report)
+            for report in power_reports + formula_reports:
+                for _, pusher in self.state.pushers.items():
+                    if isinstance(report, pusher.state.report_model.get_type()):
+                        pusher.send_data(report)
 
     def handle(self, msg):
         """
