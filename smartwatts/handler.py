@@ -94,7 +94,7 @@ class ReportHandler(Handler):
 
         return agg_core_events_group
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float) -> PowerReport:
+    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, raw_power: float, power: float, ratio: float) -> PowerReport:
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -107,7 +107,8 @@ class ReportHandler(Handler):
             'scope': self.state.config.scope.value,
             'socket': self.state.socket,
             'formula': formula,
-            'ratio': ratio
+            'ratio': ratio,
+            'predict': raw_power,
         }
         return PowerReport(timestamp, self.state.sensor, target, power, metadata)
 
@@ -127,7 +128,8 @@ class ReportHandler(Handler):
             'pkg_frequency': pkg_frequency,
             'samples': len(model.history),
             'id': model.id,
-            'error': error
+            'error': error,
+            'intercept': model.model.intercept_
         }
         return FormulaReport(timestamp, self.state.sensor, model.hash, metadata)
 
@@ -155,16 +157,16 @@ class ReportHandler(Handler):
 
         # compute RAPL power report
         rapl_power = rapl[self.state.config.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, rapl_power, 1.0))
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, rapl_power, rapl_power, 1.0))
 
         # fetch power model to use
-        pkg_frequency = self.formula._compute_pkg_frequency(avg_msr)
+        pkg_frequency = self.formula.compute_pkg_frequency(avg_msr)
         model = self.formula.get_power_model(avg_msr)
 
         # compute Global target power report
         try:
-            system_power = model.compute_power_estimation(global_core)
-            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, system_power, 1.0))
+            raw_global_power = model.compute_power_estimation(global_core)
+            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0))
         except PowerModelNotInitializedException:
             model.store_report_in_history(rapl_power, global_core)
             model.learn_power_model()
@@ -173,12 +175,13 @@ class ReportHandler(Handler):
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            target_power = model.compute_power_estimation(target_core)
-            target_power, target_ratio = model.cap_power_estimation(rapl_power, system_power, target_power)
-            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, target_power, target_ratio))
+            raw_target_power = model.compute_power_estimation(target_core)
+            target_power, target_ratio = model.cap_power_estimation(raw_target_power, raw_global_power)
+            target_power = model.apply_intercept_share(target_power, target_ratio)
+            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, raw_target_power, target_power, target_ratio))
 
         # compute power model error from reference
-        model_error = fabs(rapl_power - system_power)
+        model_error = fabs(rapl_power - raw_global_power)
 
         # store Global report if the power model error exceeds the error threshold
         if model_error > self.state.config.error_threshold:

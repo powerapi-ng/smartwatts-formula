@@ -132,18 +132,29 @@ class PowerModel:
 
         return self.model.predict([self._extract_events_value(events)])[0]
 
-    @staticmethod
-    def cap_power_estimation(power_reference: float, global_power: float, target_power: float) -> (float, float):
+    def cap_power_estimation(self, raw_target_power: float, raw_global_power: float) -> (float, float):
         """
-        Cap the target power estimation to the reference power estimation.
-        :param power_reference: Reference power estimation (in Watt, usually RAPL)
-        :param global_power: Global power estimation from the power model (in Watt)
-        :param target_power: Target power estimation from the power model (in Watt)
+        Cap target's power estimation to the global power estimation.
+        :param raw_target_power: Target power estimation from the power model (in Watt)
+        :param raw_global_power: Global power estimation from the power model (in Watt)
         :return: Capped power estimation (in Watt) with its ratio over global power consumption
         """
-        ratio = target_power / global_power if global_power > 0.0 else 0.0
-        power = power_reference * ratio
+        target_power = raw_target_power - self.model.intercept_
+        global_power = raw_global_power - self.model.intercept_
+
+        ratio = target_power / global_power if global_power > 0.0 and target_power > 0.0 else 0.0
+        power = global_power * ratio if ratio > 0.0 else 0.0
         return power, ratio
+
+    def apply_intercept_share(self, target_power: float, target_ratio: float) -> float:
+        """
+        Apply the target's share of intercept from its ratio from the global power consumption.
+        :param target_power: Target power estimation (in Watt)
+        :param target_ratio: Target ratio over the global power consumption
+        :return: Target power estimation including intercept (in Watt) and ratio over global power consumption
+        """
+        intercept = target_ratio * self.model.intercept_
+        return target_power + intercept
 
 
 class SmartWattsFormula:
@@ -180,7 +191,7 @@ class SmartWattsFormula:
 
         return last_layer_freq
 
-    def _compute_pkg_frequency(self, system_msr: Dict[str, int]) -> float:
+    def compute_pkg_frequency(self, system_msr: Dict[str, int]) -> float:
         """
         Compute the average package frequency.
         :param msr: MSR events group of System target
@@ -194,4 +205,4 @@ class SmartWattsFormula:
         :param system_core: Core events group of System target
         :return: Power model to use for the current frequency
         """
-        return self.models[self._get_frequency_layer(self._compute_pkg_frequency(system_core))]
+        return self.models[self._get_frequency_layer(self.compute_pkg_frequency(system_core))]
