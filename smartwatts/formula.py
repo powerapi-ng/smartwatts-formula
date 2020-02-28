@@ -19,11 +19,11 @@ from __future__ import annotations
 import hashlib
 import pickle
 import warnings
-from collections import OrderedDict
-from typing import List, Dict, Union
+from collections import OrderedDict, deque
+from typing import List, Dict
 
 from scipy.linalg import LinAlgWarning
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge as Regression
 
 from smartwatts.topology import CPUTopology
 
@@ -51,12 +51,14 @@ class History:
     This class stores the reports history to use when learning a new power model.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_length) -> None:
         """
         Initialize a new reports history container.
+        :param max_length: Maximum amount of samples to keep before overriding the oldest sample at insertion
         """
-        self.X: List[List[int]] = []
-        self.y: List[float] = []
+        self.max_length = max_length
+        self.X: deque[List[int]] = deque(maxlen=max_length)
+        self.y: deque[float] = deque(maxlen=max_length)
 
     def __len__(self) -> int:
         """
@@ -80,26 +82,36 @@ class PowerModel:
     This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
-    def __init__(self, frequency: int) -> None:
+    def __init__(self, frequency: int, history_window_size: int) -> None:
         """
         Initialize a new power model.
         :param frequency: Frequency of the power model
+        :param history_window_size: Size of the history window used to keep samples to learn from
         """
         self.frequency = frequency
-        self.model: Union[Ridge, None] = None
+        self.model: Regression = Regression()
         self.hash: str = 'uninitialized'
-        self.history: History = History()
+        self.history: History = History(history_window_size)
         self.id = 0
 
-    def learn_power_model(self) -> None:
+    def learn_power_model(self, min_samples: int, min_intercept: float, max_intercept: float) -> None:
         """
-        Learn a new power model using the stored reports and update the formula hash.
-        :raise: NotEnoughReportsInHistoryException when trying to learn without enough previous data
+        Learn a new power model using the stored reports and update the formula id/hash.
+        :param min_samples: Minimum amount of samples required to learn the power model
+        :param min_intercept: Minimum value allowed for the intercept of the model
+        :param max_intercept: Maximum value allowed for the intercept of the model
         """
-        if len(self.history) < 3:
+        if len(self.history) < min_samples:
             return
 
-        self.model = Ridge().fit(self.history.X, self.history.y)
+        fit_intercept = True if len(self.history) == self.history.max_length else False
+        model: Regression = Regression(fit_intercept=fit_intercept).fit(self.history.X, self.history.y)
+
+        # Discard the new model when the intercept is not in specified range
+        if not (min_intercept < model.intercept_ < max_intercept):
+            return
+
+        self.model = model
         self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
         self.id += 1
 
@@ -124,12 +136,9 @@ class PowerModel:
         """
         Compute a power estimation from the events value using the power model.
         :param events: Events value
-        :raise: PowerModelNotInitializedException when haven't been initialized
+        :raise: NotFittedError when the model haven't been fitted
         :return: Power estimation for the given events value
         """
-        if not self.model:
-            raise PowerModelNotInitializedException()
-
         return self.model.predict([self._extract_events_value(events)])[0]
 
     def cap_power_estimation(self, raw_target_power: float, raw_global_power: float) -> (float, float):
@@ -143,8 +152,7 @@ class PowerModel:
         global_power = raw_global_power - self.model.intercept_
 
         ratio = target_power / global_power if global_power > 0.0 and target_power > 0.0 else 0.0
-        power = global_power * ratio if ratio > 0.0 else 0.0
-        return power, ratio
+        return target_power if target_power > 0.0 else 0.0, ratio
 
     def apply_intercept_share(self, target_power: float, target_ratio: float) -> float:
         """
@@ -162,20 +170,22 @@ class SmartWattsFormula:
     This formula compute per-target power estimations using hardware performance counters.
     """
 
-    def __init__(self, cpu_topology: CPUTopology) -> None:
+    def __init__(self, cpu_topology: CPUTopology, history_window_size: int) -> None:
         """
         Initialize a new formula.
         :param cpu_topology: CPU topology to use
+        :param history_window_size: Size of the history window used to keep samples to learn from
         """
         self.cpu_topology = cpu_topology
-        self.models = self._gen_models_dict()
+        self.models = self._gen_models_dict(history_window_size)
 
-    def _gen_models_dict(self) -> Dict[int, PowerModel]:
+    def _gen_models_dict(self, history_window_size: int) -> Dict[int, PowerModel]:
         """
         Generate and returns a layered container to store per-frequency power models.
+        :param history_window_size: Size of the history window used to keep samples to learn from
         :return: Initialized Ordered dict containing a power model for each frequency layer
         """
-        return OrderedDict((freq, PowerModel(freq)) for freq in self.cpu_topology.get_supported_frequencies())
+        return OrderedDict((freq, PowerModel(freq, history_window_size)) for freq in self.cpu_topology.get_supported_frequencies())
 
     def _get_frequency_layer(self, frequency: float) -> int:
         """
@@ -194,7 +204,7 @@ class SmartWattsFormula:
     def compute_pkg_frequency(self, system_msr: Dict[str, int]) -> float:
         """
         Compute the average package frequency.
-        :param msr: MSR events group of System target
+        :param system_msr: MSR events group of System target
         :return: Average frequency of the Package
         """
         return (self.cpu_topology.get_base_frequency() * system_msr['APERF']) / system_msr['MPERF']

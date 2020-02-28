@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from math import ldexp, fabs
@@ -22,9 +23,10 @@ from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
+from sklearn.exceptions import NotFittedError
 
 from smartwatts.context import SmartWattsFormulaState
-from smartwatts.formula import SmartWattsFormula, PowerModelNotInitializedException, PowerModel
+from smartwatts.formula import SmartWattsFormula, PowerModel
 
 
 class ReportHandler(Handler):
@@ -40,7 +42,7 @@ class ReportHandler(Handler):
         Handler.__init__(self, state)
         self.state = state
         self.ticks = OrderedDict()
-        self.formula = SmartWattsFormula(state.config.cpu_topology)
+        self.formula = SmartWattsFormula(state.config.cpu_topology, state.config.history_window_size)
 
     def _gen_rapl_events_group(self, system_report: HWPCReport) -> Dict[str, float]:
         """
@@ -157,7 +159,7 @@ class ReportHandler(Handler):
 
         # compute RAPL power report
         rapl_power = rapl[self.state.config.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, rapl_power, rapl_power, 1.0))
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, 0.0, rapl_power, 1.0))
 
         # fetch power model to use
         pkg_frequency = self.formula.compute_pkg_frequency(avg_msr)
@@ -167,9 +169,9 @@ class ReportHandler(Handler):
         try:
             raw_global_power = model.compute_power_estimation(global_core)
             power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0))
-        except PowerModelNotInitializedException:
+        except NotFittedError:
             model.store_report_in_history(rapl_power, global_core)
-            model.learn_power_model()
+            model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
             return power_reports, formula_reports
 
         # compute per-target power report
@@ -183,10 +185,12 @@ class ReportHandler(Handler):
         # compute power model error from reference
         model_error = fabs(rapl_power - raw_global_power)
 
-        # store Global report if the power model error exceeds the error threshold
+        # store global report
+        model.store_report_in_history(rapl_power, global_core)
+
+        # learn new power model if error exceeds the error threshold
         if model_error > self.state.config.error_threshold:
-            model.store_report_in_history(rapl_power, global_core)
-            model.learn_power_model()
+            model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
 
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))

@@ -21,7 +21,7 @@ class SmartWattsFormulaConfig:
     Global config of the SmartWatts formula.
     """
 
-    def __init__(self, scope: SmartWattsFormulaScope, reports_frequency: int, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology):
+    def __init__(self, scope: SmartWattsFormulaScope, reports_frequency: int, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology, min_samples_required: int, history_window_size: int):
         """
         Initialize a new formula config object.
         :param scope: Scope of the formula
@@ -29,12 +29,16 @@ class SmartWattsFormulaConfig:
         :param rapl_event: RAPL event to use as reference
         :param error_threshold: Error threshold (in Watt)
         :param cpu_topology: Topology of the CPU
+        :param min_samples_required: Minimum amount of samples required before trying to learn a power model
+        :param history_window_size: Size of the history window used to keep samples to learn from
         """
         self.scope = scope
         self.reports_frequency = reports_frequency
         self.rapl_event = rapl_event
         self.error_threshold = error_threshold
         self.cpu_topology = cpu_topology
+        self.min_samples_required = min_samples_required
+        self.history_window_size = history_window_size
 
 
 class SmartWattsFormulaState(FormulaState):
