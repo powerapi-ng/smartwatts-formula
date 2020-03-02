@@ -131,7 +131,8 @@ class ReportHandler(Handler):
             'samples': len(model.history),
             'id': model.id,
             'error': error,
-            'intercept': model.model.intercept_
+            'intercept': model.model.intercept_,
+            'coef': str(model.model.coef_)
         }
         return FormulaReport(timestamp, self.state.sensor, model.hash, metadata)
 
