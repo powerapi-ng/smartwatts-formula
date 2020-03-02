@@ -23,7 +23,7 @@ from collections import OrderedDict, deque
 from typing import List, Dict
 
 from scipy.linalg import LinAlgWarning
-from sklearn.linear_model import Ridge as Regression
+from sklearn.linear_model import ElasticNet as Regression
 
 from smartwatts.topology import CPUTopology
 
@@ -105,7 +105,7 @@ class PowerModel:
             return
 
         fit_intercept = True if len(self.history) == self.history.max_length else False
-        model: Regression = Regression(fit_intercept=fit_intercept).fit(self.history.X, self.history.y)
+        model: Regression = Regression(fit_intercept=fit_intercept, positive=True).fit(self.history.X, self.history.y)
 
         # Discard the new model when the intercept is not in specified range
         if not (min_intercept < model.intercept_ < max_intercept):
@@ -152,7 +152,8 @@ class PowerModel:
         global_power = raw_global_power - self.model.intercept_
 
         ratio = target_power / global_power if global_power > 0.0 and target_power > 0.0 else 0.0
-        return target_power if target_power > 0.0 else 0.0, ratio
+        power = target_power if target_power > 0.0 else 0.0
+        return power, ratio
 
     def apply_intercept_share(self, target_power: float, target_ratio: float) -> float:
         """
