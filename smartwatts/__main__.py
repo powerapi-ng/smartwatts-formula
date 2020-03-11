@@ -82,7 +82,7 @@ def setup_cpu_formula_actor(fconf, route_table, report_filter, cpu_topology, pus
     """
     def cpu_formula_factory(name: str, _):
         scope = SmartWattsFormulaScope.CPU
-        config = SmartWattsFormulaConfig(scope, fconf['sensor-reports-frequency'], fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-min-samples-required'])
+        config = SmartWattsFormulaConfig(scope, fconf['sensor-reports-frequency'], fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-history-window-size'])
         return SmartWattsFormulaActor(name, pushers, config)
 
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, route_table)
