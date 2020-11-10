@@ -1,0 +1,9 @@
+FROM powerapi/powerapi:0.8.0-pypy
+USER root
+RUN apt update && apt upgrade -y
+RUN apt install -y libblas-dev liblapack-dev libatlas-base-dev gfortran
+USER powerapi
+COPY --chown=powerapi . /tmp/smartwatts
+RUN pip install --user --no-cache-dir "/tmp/smartwatts" && rm -r /tmp/smartwatts
+
+ENTRYPOINT ["pypy3", "-m", "smartwatts"]
