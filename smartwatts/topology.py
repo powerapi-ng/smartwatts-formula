@@ -13,16 +13,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-from typing import List
-
-
 class CPUTopology:
     """
     This class stores the necessary information about the CPU topology.
     """
 
-    def __init__(self, tdp: int, freq_bclk: int, ratio_min: int, ratio_base: int, ratio_max: int) -> None:
+    def __init__(self, tdp, freq_bclk, ratio_min, ratio_base, ratio_max):
         """
         Create a new CPU topology object.
         :param tdp: TDP of the CPU in Watt
@@ -37,28 +33,28 @@ class CPUTopology:
         self.ratio_base = ratio_base
         self.ratio_max = ratio_max
 
-    def get_min_frequency(self) -> int:
+    def get_min_frequency(self):
         """
         Compute and return the CPU max efficiency frequency.
         :return: The CPU max efficiency frequency in MHz
         """
         return self.freq_bclk * self.ratio_min
 
-    def get_base_frequency(self) -> int:
+    def get_base_frequency(self):
         """
         Compute and return the CPU base frequency.
         :return: The CPU base frequency in MHz
         """
         return self.freq_bclk * self.ratio_base
 
-    def get_max_frequency(self) -> int:
+    def get_max_frequency(self):
         """
         Compute and return the CPU maximum frequency. (Turbo-Boost included)
         :return: The CPU maximum frequency in MHz
         """
         return self.freq_bclk * self.ratio_max
 
-    def get_supported_frequencies(self) -> List[int]:
+    def get_supported_frequencies(self):
         """
         Compute the supported frequencies for this CPU.
         :return: A list of supported frequencies in MHz

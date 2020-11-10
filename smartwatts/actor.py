@@ -13,11 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-from __future__ import annotations
-
 import logging
-from typing import Dict
 
 from powerapi.formula import FormulaActor
 from powerapi.handler import PoisonPillMessageHandler
@@ -34,7 +30,7 @@ class SmartWattsFormulaActor(FormulaActor):
     This actor handle the reports for the SmartWatts formula.
     """
 
-    def __init__(self, name: str, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig):
+    def __init__(self, name, pushers, config):
         """
         Initialize new SmartWatts formula actor.
         :param name: Name of the actor
@@ -42,7 +38,7 @@ class SmartWattsFormulaActor(FormulaActor):
         :param config: Configuration of the formula
         """
         FormulaActor.__init__(self, name, pushers, logging.WARNING)
-        self.state: SmartWattsFormulaState = SmartWattsFormulaState(self, pushers, config)
+        self.state: SmartWattsFormulaState = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
 
     def setup(self):
         """

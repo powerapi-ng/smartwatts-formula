@@ -17,7 +17,6 @@
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from math import ldexp, fabs
-from typing import Dict, List
 
 from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
@@ -34,7 +33,7 @@ class ReportHandler(Handler):
     This reports handler process the HWPC reports to compute a per-target power estimation.
     """
 
-    def __init__(self, state: SmartWattsFormulaState):
+    def __init__(self, state):
         """
         Initialize a new report handler.
         :param state: State of the actor
@@ -44,7 +43,7 @@ class ReportHandler(Handler):
         self.ticks = OrderedDict()
         self.formula = SmartWattsFormula(state.config.cpu_topology, state.config.history_window_size)
 
-    def _gen_rapl_events_group(self, system_report: HWPCReport) -> Dict[str, float]:
+    def _gen_rapl_events_group(self, system_report):
         """
         Generate an events group with the RAPL reference event converted in Watts for the current socket.
         :param system_report: The HWPC report of the System target
@@ -54,7 +53,7 @@ class ReportHandler(Handler):
         energy = ldexp(cpu_events[self.state.config.rapl_event], -32) / (self.state.config.reports_frequency / 1000)
         return {self.state.config.rapl_event: energy}
 
-    def _gen_msr_events_group(self, system_report: HWPCReport) -> Dict[str, int]:
+    def _gen_msr_events_group(self, system_report):
         """
         Generate an events group with the average of the MSR counters for the current socket.
         :param system_report: The HWPC report of the System target
@@ -69,7 +68,7 @@ class ReportHandler(Handler):
 
         return {k: (v / msr_events_count[k]) for k, v in msr_events_group.items()}
 
-    def _gen_core_events_group(self, report: HWPCReport) -> Dict[str, int]:
+    def _gen_core_events_group(self, report):
         """
         Generate an events group with Core events for the current socket.
         The events value are the sum of the value for each CPU.
@@ -83,7 +82,7 @@ class ReportHandler(Handler):
 
         return core_events_group
 
-    def _gen_agg_core_report_from_running_targets(self, targets_report: Dict[str, HWPCReport]) -> Dict[str, int]:
+    def _gen_agg_core_report_from_running_targets(self, targets_report):
         """
         Generate an aggregate Core events group of the running targets for the current socket.
         :param targets_report: List of Core events group of the running targets
@@ -96,7 +95,7 @@ class ReportHandler(Handler):
 
         return agg_core_events_group
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, raw_power: float, power: float, ratio: float) -> PowerReport:
+    def _gen_power_report(self, timestamp, target, formula, raw_power, power, ratio) -> PowerReport:
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -112,9 +111,9 @@ class ReportHandler(Handler):
             'ratio': ratio,
             'predict': raw_power,
         }
-        return PowerReport(timestamp, self.state.sensor, target, power, metadata)
+        return PowerReport(timestamp, self.state.sensor, target, self.state.socket, power, metadata)
 
-    def _gen_formula_report(self, timestamp: datetime, pkg_frequency: float, model: PowerModel, error: float) -> FormulaReport:
+    def _gen_formula_report(self, timestamp, pkg_frequency, model, error):
         """
         Generate a formula report using the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -136,7 +135,7 @@ class ReportHandler(Handler):
         }
         return FormulaReport(timestamp, self.state.sensor, model.hash, metadata)
 
-    def _process_oldest_tick(self) -> (List[PowerReport], List[FormulaReport]):
+    def _process_oldest_tick(self):
         """
         Process the oldest tick stored in the stack and generate power reports for the running target(s).
         :return: Power reports of the running target(s)
@@ -198,7 +197,7 @@ class ReportHandler(Handler):
 
         return power_reports, formula_reports
 
-    def _process_report(self, report) -> None:
+    def _process_report(self, report):
         """
         Process the received report and trigger the processing of the old ticks.
         :param report: HWPC report of a target

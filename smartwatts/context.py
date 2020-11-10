@@ -1,6 +1,5 @@
 import re
 from enum import Enum
-from typing import Dict
 
 from powerapi.formula import FormulaState, FormulaActor
 from powerapi.pusher import PusherActor
@@ -21,7 +20,7 @@ class SmartWattsFormulaConfig:
     Global config of the SmartWatts formula.
     """
 
-    def __init__(self, scope: SmartWattsFormulaScope, reports_frequency: int, rapl_event: str, error_threshold: float, cpu_topology: CPUTopology, min_samples_required: int, history_window_size: int):
+    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required, history_window_size):
         """
         Initialize a new formula config object.
         :param scope: Scope of the formula
@@ -46,14 +45,14 @@ class SmartWattsFormulaState(FormulaState):
     State of the SmartWatts formula actor.
     """
 
-    def __init__(self, actor: FormulaActor, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig):
+    def __init__(self, actor, pushers, metadata, config):
         """
         Initialize a new formula state object.
         :param actor: Actor of the formula
         :param pushers: Dictionary of available pushers
         :param config: Configuration of the formula
         """
-        FormulaState.__init__(self, actor, pushers)
+        FormulaState.__init__(self, actor, pushers, metadata)
         self.config = config
 
         m = re.search(r'^\(\'(.*)\', \'(.*)\', \'(.*)\'\)$', actor.name)  # TODO: Need a better way to get these information

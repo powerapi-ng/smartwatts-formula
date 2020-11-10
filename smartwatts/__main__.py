@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     # logging.basicConfig(level=logging.DEBUG if config['verbose'] else logging.WARNING)
     logging.basicConfig(level=logging.INFO)
-
+    print(config)
     # FIXME: Better error handling when the user doesn't provide a formula parameter.
     try:
         config['formula']['smartwatts']
