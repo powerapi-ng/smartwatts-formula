@@ -156,7 +156,7 @@ def run_smartwatts(args) -> None:
     signal.signal(signal.SIGTERM, term_handler)
     signal.signal(signal.SIGINT, term_handler)
 
-    supervisor = BackendSupervisor(config['stream'])
+    supervisor = BackendSupervisor(args['stream'])
     try:
         logging.info('Starting SmartWatts actors...')
         for _, actor in actors.items():
