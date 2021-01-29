@@ -40,6 +40,12 @@ class SmartWattsFormulaActor(FormulaActor):
         FormulaActor.__init__(self, name, pushers, logging.WARNING)
         self.state: SmartWattsFormulaState = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
 
+        self.low_exception.append(ValueError)
+        self.low_exception.append(ZeroDivisionError)
+        self.low_exception.append(TypeError)
+        self.low_exception.append(KeyError)
+        self.low_exception.append(IndexError)
+
     def setup(self):
         """
         Setup the messages handlers.
