@@ -161,6 +161,9 @@ class ReportHandler(Handler):
         rapl_power = rapl[self.state.config.rapl_event]
         power_reports.append(self._gen_power_report(timestamp, 'rapl', self.state.config.rapl_event, 0.0, rapl_power, 1.0))
 
+        if global_core == {}:
+            return power_reports, formula_reports
+
         # fetch power model to use
         pkg_frequency = self.formula.compute_pkg_frequency(avg_msr)
         model = self.formula.get_power_model(avg_msr)
@@ -194,7 +197,6 @@ class ReportHandler(Handler):
 
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))
-
         return power_reports, formula_reports
 
     def _process_report(self, report):
@@ -210,7 +212,6 @@ class ReportHandler(Handler):
         # we wait before processing the ticks in order to mitigate the possible delay of the sensor/database.
         if len(self.ticks) > 5:
             power_reports, formula_reports = self._process_oldest_tick()
-
             for report in power_reports + formula_reports:
                 for _, pusher in self.state.pushers.items():
                     if isinstance(report, pusher.state.report_model.get_type()):
