@@ -85,9 +85,9 @@ class PowerModel:
         :param history_window_size: Size of the history window used to keep samples to learn from
         """
         self.frequency = frequency
-        self.model: Regression = Regression()
-        self.hash: str = 'uninitialized'
-        self.history: History = History(history_window_size)
+        self.model = Regression()
+        self.hash = 'uninitialized'
+        self.history = History(history_window_size)
         self.id = 0
 
     def learn_power_model(self, min_samples, min_intercept, max_intercept):
@@ -101,7 +101,7 @@ class PowerModel:
             return
 
         fit_intercept = True if len(self.history) == self.history.max_length else False
-        model: Regression = Regression(fit_intercept=fit_intercept, positive=True).fit(self.history.X, self.history.y)
+        model = Regression(fit_intercept=fit_intercept, positive=True).fit(self.history.X, self.history.y)
 
         # Discard the new model when the intercept is not in specified range
         if not (min_intercept <= model.intercept_ < max_intercept):

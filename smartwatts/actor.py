@@ -38,7 +38,7 @@ class SmartWattsFormulaActor(FormulaActor):
         :param config: Configuration of the formula
         """
         FormulaActor.__init__(self, name, pushers, logging.WARNING)
-        self.state: SmartWattsFormulaState = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
+        self.state = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
 
         self.low_exception.append(ValueError)
         self.low_exception.append(ZeroDivisionError)

@@ -95,7 +95,7 @@ class ReportHandler(Handler):
 
         return agg_core_events_group
 
-    def _gen_power_report(self, timestamp, target, formula, raw_power, power, ratio) -> PowerReport:
+    def _gen_power_report(self, timestamp, target, formula, raw_power, power, ratio):
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements

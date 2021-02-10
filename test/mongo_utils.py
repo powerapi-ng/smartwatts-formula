@@ -31,8 +31,8 @@ import datetime
 import pymongo
 
 import test.hwpc_reports as hwpc_reports
-import test.hwpc_reports_with_first_empty as hwpc_reports_with_first_empty
-import test.hwpc_reports_msr_zero as hwpc_reports_msr_zero
+# import test.hwpc_reports_with_first_empty as hwpc_reports_with_first_empty
+# import test.hwpc_reports_msr_zero as hwpc_reports_msr_zero
 def generate_colection(db, name, capped, item_generator, size=None):
     """
     generate a collection and fill it

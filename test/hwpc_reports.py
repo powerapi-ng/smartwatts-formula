@@ -3,7 +3,7 @@ import time
 reports = [
     {
 	"_id" : "5ffec29a7391b52aff60cb23",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "influxdb",
 	"groups" : {
@@ -79,7 +79,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29a7391b52aff60cb24",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "all",
 	"groups" : {
@@ -156,7 +156,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29a7391b52aff60cb25",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "mongo",
 	"groups" : {
@@ -232,7 +232,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29a7391b52aff60cb26",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:22.630", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "powerapi-sensor",
 	"groups" : {
@@ -308,7 +308,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29b7391b52aff60cb27",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "influxdb",
 	"groups" : {
@@ -384,7 +384,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29b7391b52aff60cb28",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "all",
 	"groups" : {
@@ -461,7 +461,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29b7391b52aff60cb29",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "powerapi-sensor",
 	"groups" : {
@@ -537,7 +537,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29b7391b52aff60cb2a",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:23.634", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "mongo",
 	"groups" : {
@@ -613,7 +613,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29c7391b52aff60cb2b",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "powerapi-sensor",
 	"groups" : {
@@ -689,7 +689,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29c7391b52aff60cb2c",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "influxdb",
 	"groups" : {
@@ -765,7 +765,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29c7391b52aff60cb2d",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "all",
 	"groups" : {
@@ -842,7 +842,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29c7391b52aff60cb2e",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:24.639", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "mongo",
 	"groups" : {
@@ -918,7 +918,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29d7391b52aff60cb2f",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "influxdb",
 	"groups" : {
@@ -994,7 +994,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29d7391b52aff60cb30",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "mongo",
 	"groups" : {
@@ -1070,7 +1070,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29d7391b52aff60cb31",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "all",
 	"groups" : {
@@ -1147,7 +1147,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29d7391b52aff60cb32",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:25.643", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "powerapi-sensor",
 	"groups" : {
@@ -1223,7 +1223,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29e7391b52aff60cb33",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "powerapi-sensor",
 	"groups" : {
@@ -1299,7 +1299,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29e7391b52aff60cb34",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "all",
 	"groups" : {
@@ -1376,7 +1376,7 @@ reports = [
     },
     {
 	"_id" : "5ffec29e7391b52aff60cb35",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "mongo",
 	"groups" : {
@@ -1452,7 +1452,7 @@ reports = [
     },
     {
         "_id" : "5ffec29e7391b52aff60cb36",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:26.647", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "influxdb",
         "groups" : {
@@ -1528,7 +1528,7 @@ reports = [
     },
     {
         "_id" : "5ffec29f7391b52aff60cb37",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "powerapi-sensor",
         "groups" : {
@@ -1604,7 +1604,7 @@ reports = [
     },
     {
         "_id" : "5ffec29f7391b52aff60cb38",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "all",
         "groups" : {
@@ -1681,7 +1681,7 @@ reports = [
     },
     {
         "_id" : "5ffec29f7391b52aff60cb39",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "mongo",
         "groups" : {
@@ -1757,7 +1757,7 @@ reports = [
     },
     {
         "_id" : "5ffec29f7391b52aff60cb3a",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:27.651", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "influxdb",
         "groups" : {
@@ -1833,7 +1833,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a07391b52aff60cb3b",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "powerapi-sensor",
         "groups" : {
@@ -1909,7 +1909,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a07391b52aff60cb3c",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "all",
         "groups" : {
@@ -1986,7 +1986,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a07391b52aff60cb3d",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "mongo",
         "groups" : {
@@ -2062,7 +2062,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a07391b52aff60cb3e",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:28.655", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "influxdb",
         "groups" : {
@@ -2138,7 +2138,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a17391b52aff60cb3f",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "influxdb",
         "groups" : {
@@ -2214,7 +2214,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a17391b52aff60cb40",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "mongo",
         "groups" : {
@@ -2290,7 +2290,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a17391b52aff60cb41",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "powerapi-sensor",
         "groups" : {
@@ -2366,7 +2366,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a17391b52aff60cb42",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:29.659", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "all",
         "groups" : {
@@ -2443,7 +2443,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a27391b52aff60cb43",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "mongo",
         "groups" : {
@@ -2519,7 +2519,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a27391b52aff60cb44",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "powerapi-sensor",
         "groups" : {
@@ -2595,7 +2595,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a27391b52aff60cb45",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "influxdb",
         "groups" : {
@@ -2671,7 +2671,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a27391b52aff60cb46",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:30.663", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "all",
         "groups" : {
@@ -2748,7 +2748,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a37391b52aff60cb47",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "powerapi-sensor",
         "groups" : {
@@ -2824,7 +2824,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a37391b52aff60cb48",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "mongo",
         "groups" : {
@@ -2900,7 +2900,7 @@ reports = [
     },
     {
         "_id" : "5ffec2a37391b52aff60cb49",
-        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+        "timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667", "%Y-%m-%dT%H:%M:%S.%f"))),
         "sensor" : "sensor_test",
         "target" : "all",
         "groups" : {
@@ -2977,7 +2977,7 @@ reports = [
     },
     {
 	"_id" : "5ffec2a37391b52aff60cb4a",
-	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667Z", "%Y-%m-%dT%H:%M:%S.%f%z"))),
+	"timestamp" : int(time.mktime(time.strptime("2021-01-13T09:51:31.667", "%Y-%m-%dT%H:%M:%S.%f"))),
 	"sensor" : "sensor_test",
 	"target" : "influxdb",
 	"groups" : {
