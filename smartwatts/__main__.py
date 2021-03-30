@@ -16,7 +16,10 @@
 
 import logging
 import signal
+import os
 from collections import OrderedDict
+
+from cgroupspy import trees
 
 from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
@@ -149,6 +152,7 @@ def run_smartwatts(args) -> None:
     actors = OrderedDict(**pushers, **dispatchers, **pullers)
 
     def term_handler(_, __):
+        delete_cgroup()
         for _, actor in actors.items():
             actor.soft_kill()
         exit(0)
@@ -170,6 +174,27 @@ def run_smartwatts(args) -> None:
     logging.info('SmartWatts is shutting down...')
 
 
+def set_cgroup():
+    try:
+        os.mkdir('/sys/fs/cgroup/perf_event/smartwatts')
+        tasks = open('/sys/fs/cgroup/perf_event/smartwatts/tasks', 'w+')
+        tasks.write(str(os.getpid()))
+        tasks.close()
+    except OSError:
+        logging.error('Can not create cgroup for smartwatts')
+        exit(-1)
+
+
+def delete_cgroup():
+    os.system('cgdelete perf_event:smartwatts')
+    perf_event_cgroup = trees.Tree().get_node_by_path('/perf_event/')
+
+    for cgroup in perf_event_cgroup.children:
+        if cgroup.name == b'smartwatts':
+            logging.error('Can not delete smartwatts cgroup')
+            exit(-1)
+
+
 if __name__ == "__main__":
     parser = CommonCLIParser()
     parser.add_formula_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
@@ -184,5 +209,12 @@ if __name__ == "__main__":
     except KeyError:
         exit(-1)
 
-    run_smartwatts(config)
+    set_cgroup()
+
+    try:
+        run_smartwatts(config)
+    except Exception:
+        delete_cgroup()
+        exit(-1)
+    delete_cgroup()
     exit(0)
