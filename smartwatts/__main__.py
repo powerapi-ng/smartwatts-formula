@@ -187,13 +187,6 @@ def set_cgroup():
 
 def delete_cgroup():
     os.system('cgdelete perf_event:smartwatts')
-    perf_event_cgroup = trees.Tree().get_node_by_path('/perf_event/')
-
-    for cgroup in perf_event_cgroup.children:
-        if cgroup.name == b'smartwatts':
-            logging.error('Can not delete smartwatts cgroup')
-            exit(-1)
-
 
 if __name__ == "__main__":
     parser = CommonCLIParser()
