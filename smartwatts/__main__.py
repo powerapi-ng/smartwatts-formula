@@ -19,8 +19,6 @@ import signal
 import os
 from collections import OrderedDict
 
-from cgroupspy import trees
-
 from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
 from powerapi.backendsupervisor import BackendSupervisor
