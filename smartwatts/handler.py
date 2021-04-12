@@ -22,7 +22,11 @@ from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
-from sklearn.exceptions import NotFittedError
+
+try:
+    from sklearn.exceptions import NotFittedError
+except ImportError:
+    from sklearn.utils.validation import NotFittedError
 
 from smartwatts.context import SmartWattsFormulaState
 from smartwatts.formula import SmartWattsFormula, PowerModel
