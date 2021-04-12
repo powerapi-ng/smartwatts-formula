@@ -18,13 +18,16 @@ import pickle
 import warnings
 from collections import OrderedDict, deque
 
-from scipy.linalg import LinAlgWarning
 from sklearn.linear_model import ElasticNet as Regression
-
 from smartwatts.topology import CPUTopology
 
+try:
+    from scipy.linalg import LinAlgWarning
+    warnings.filterwarnings('ignore', category=LinAlgWarning)
+except ImportError:
+    pass
+
 # make scikit-learn more silent
-warnings.filterwarnings('ignore', category=LinAlgWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 
 
