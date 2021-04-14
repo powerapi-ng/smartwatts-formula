@@ -53,7 +53,7 @@ class ReportHandler(Handler):
         :param system_report: The HWPC report of the System target
         :return: A dictionary containing the RAPL reference event with its value converted in Watts
         """
-        cpu_events = next(iter(system_report.groups['rapl'][self.state.socket].values()))
+        cpu_events = next(iter(system_report.groups['rapl'][str(self.state.socket)].values()))
         energy = ldexp(cpu_events[self.state.config.rapl_event], -32) / (self.state.config.reports_frequency / 1000)
         return {self.state.config.rapl_event: energy}
 
@@ -65,7 +65,7 @@ class ReportHandler(Handler):
         """
         msr_events_group = defaultdict(int)
         msr_events_count = defaultdict(int)
-        for _, cpu_events in system_report.groups['msr'][self.state.socket].items():
+        for _, cpu_events in system_report.groups['msr'][str(self.state.socket)].items():
             for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
                 msr_events_group[event_name] += event_value
                 msr_events_count[event_name] += 1
@@ -80,7 +80,7 @@ class ReportHandler(Handler):
         :return: A dictionary containing the Core events of the current socket
         """
         core_events_group = defaultdict(int)
-        for _, cpu_events in report.groups['core'][self.state.socket].items():
+        for _, cpu_events in report.groups['core'][str(self.state.socket)].items():
             for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
                 core_events_group[event_name] += event_value
 
