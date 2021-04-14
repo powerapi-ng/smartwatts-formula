@@ -111,7 +111,7 @@ class PowerModel:
             return
 
         self.model = model
-        self.hash = hashlib.blake2b(pickle.dumps(self.model), digest_size=20).hexdigest()
+        self.hash = hashlib.sha512(pickle.dumps(self.model)).hexdigest()
         self.id += 1
 
     @staticmethod

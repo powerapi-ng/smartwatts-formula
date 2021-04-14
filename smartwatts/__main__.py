@@ -161,8 +161,9 @@ def run_smartwatts(args) -> None:
     supervisor = BackendSupervisor(args['stream'])
     try:
         logging.info('Starting SmartWatts actors...')
-        for _, actor in actors.items():
-            supervisor.launch_actor(actor)
+        for actor_list in [pushers, dispatchers, pullers]:
+            for _, actor in actor_list.items():
+                supervisor.launch_actor(actor)
     except ActorInitError as exn:
         logging.error('Actor initialization error: ' + exn.message)
         supervisor.kill_actors()

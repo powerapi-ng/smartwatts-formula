@@ -58,4 +58,4 @@ class SmartWattsFormulaState(FormulaState):
         m = re.search(r'^\(\'(.*)\', \'(.*)\', \'(.*)\'\)$', actor.name)  # TODO: Need a better way to get these information
         self.dispatcher = m.group(1)
         self.sensor = m.group(2)
-        self.socket = m.group(3)
+        self.socket = int(m.group(3))
