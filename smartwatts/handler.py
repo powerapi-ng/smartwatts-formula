@@ -15,21 +15,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections import OrderedDict, defaultdict
-from datetime import datetime
 from math import ldexp, fabs
 
 from powerapi.handler import Handler
 from powerapi.message import UnknowMessageTypeException
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.report.formula_report import FormulaReport
+from sklearn.exceptions import NotFittedError
 
-try:
-    from sklearn.exceptions import NotFittedError
-except ImportError:
-    from sklearn.utils.validation import NotFittedError
-
-from smartwatts.context import SmartWattsFormulaState
-from smartwatts.formula import SmartWattsFormula, PowerModel
+from smartwatts.formula import SmartWattsFormula
 
 
 class ReportHandler(Handler):
@@ -208,15 +202,13 @@ class ReportHandler(Handler):
         Process the received report and trigger the processing of the old ticks.
         :param report: HWPC report of a target
         """
-
-        # store the received report into the tick's bucket
         self.ticks.setdefault(report.timestamp, {}).update({report.target: report})
 
         # start to process the oldest tick only after receiving at least 5 ticks.
         # we wait before processing the ticks in order to mitigate the possible delay of the sensor/database.
         if len(self.ticks) > 5:
             power_reports, formula_reports = self._process_oldest_tick()
-            for report in power_reports + formula_reports:
+            for report in [*power_reports, *formula_reports]:
                 for _, pusher in self.state.pushers.items():
                     if isinstance(report, pusher.state.report_model.get_type()):
                         pusher.send_data(report)

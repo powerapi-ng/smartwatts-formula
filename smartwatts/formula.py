@@ -13,22 +13,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import hashlib
-import pickle
-import warnings
+
 from collections import OrderedDict, deque
+from hashlib import sha1
+from pickle import dumps
 
 from sklearn.linear_model import ElasticNet as Regression
-from smartwatts.topology import CPUTopology
-
-try:
-    from scipy.linalg import LinAlgWarning
-    warnings.filterwarnings('ignore', category=LinAlgWarning)
-except ImportError:
-    pass
-
-# make scikit-learn more silent
-warnings.filterwarnings('ignore', category=UserWarning)
 
 
 class PowerModelNotInitializedException(Exception):
@@ -111,7 +101,7 @@ class PowerModel:
             return
 
         self.model = model
-        self.hash = hashlib.sha512(pickle.dumps(self.model)).hexdigest()
+        self.hash = sha1(dumps(self.model)).hexdigest()
         self.id += 1
 
     @staticmethod

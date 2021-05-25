@@ -13,15 +13,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import logging
 
 from powerapi.formula import FormulaActor
 from powerapi.handler import PoisonPillMessageHandler
 from powerapi.message import PoisonPillMessage
-from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
-from smartwatts.context import SmartWattsFormulaConfig, SmartWattsFormulaState
+from smartwatts.context import SmartWattsFormulaState
 from smartwatts.handler import ReportHandler
 
 
