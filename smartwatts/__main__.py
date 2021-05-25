@@ -16,7 +16,6 @@
 
 import logging
 import signal
-import os
 from collections import OrderedDict
 
 from powerapi import __version__ as powerapi_version
@@ -30,8 +29,8 @@ from powerapi.filter import Filter
 from powerapi.report import HWPCReport
 
 from smartwatts import __version__ as smartwatts_version
-from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaConfig
-from smartwatts.context import SmartWattsFormulaScope
+from smartwatts.actor import SmartWattsFormulaActor
+from smartwatts.context import SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
 
 
@@ -150,7 +149,6 @@ def run_smartwatts(args) -> None:
     actors = OrderedDict(**pushers, **dispatchers, **pullers)
 
     def term_handler(_, __):
-        delete_cgroup()
         for _, actor in actors.items():
             actor.soft_kill()
         exit(0)
@@ -173,40 +171,20 @@ def run_smartwatts(args) -> None:
     logging.info('SmartWatts is shutting down...')
 
 
-def set_cgroup():
-    try:
-        os.mkdir('/sys/fs/cgroup/perf_event/smartwatts')
-        tasks = open('/sys/fs/cgroup/perf_event/smartwatts/tasks', 'w+')
-        tasks.write(str(os.getpid()))
-        tasks.close()
-    except OSError:
-        logging.error('Can not create cgroup for smartwatts')
-        exit(-1)
-
-
-def delete_cgroup():
-    os.system('cgdelete perf_event:smartwatts')
-
 if __name__ == "__main__":
     parser = CommonCLIParser()
     parser.add_formula_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
     config = parser.parse_argv()
 
-    # logging.basicConfig(level=logging.DEBUG if config['verbose'] else logging.WARNING)
-    logging.basicConfig(level=logging.INFO)
-    print(config)
+    logging.basicConfig(level=logging.WARNING if config['verbose'] else logging.INFO)
+    logging.captureWarnings(True)
+
     # FIXME: Better error handling when the user doesn't provide a formula parameter.
     try:
         config['formula']['smartwatts']
     except KeyError:
+        logging.error('No configuration found for SmartWatts formula')
         exit(-1)
 
-    set_cgroup()
-
-    try:
-        run_smartwatts(config)
-    except Exception:
-        delete_cgroup()
-        exit(-1)
-    delete_cgroup()
+    run_smartwatts(config)
     exit(0)
