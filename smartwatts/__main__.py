@@ -22,7 +22,7 @@ from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
 from powerapi.backendsupervisor import BackendSupervisor
 from powerapi.cli.parser import ComponentSubParser, store_true
-from powerapi.cli.tools import CommonCLIParser, PusherGenerator, PullerGenerator
+from powerapi.cli.tools import CommonCLIParser, PusherGenerator, PullerGenerator, ReportModifierGenerator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
 from powerapi.filter import Filter
@@ -130,7 +130,10 @@ def run_smartwatts(args) -> None:
     cpu_topology = CPUTopology(fconf['cpu-tdp'], fconf['cpu-base-clock'], fconf['cpu-ratio-min'], fconf['cpu-ratio-base'], fconf['cpu-ratio-max'])
 
     report_filter = Filter()
-    pullers = PullerGenerator(report_filter).generate(args)
+
+    report_modifier_list = ReportModifierGenerator().generate(config)
+    
+    pullers = PullerGenerator(report_filter, report_modifier_list).generate(args)
 
     pushers = PusherGenerator().generate(args)
 
@@ -173,8 +176,9 @@ def run_smartwatts(args) -> None:
 
 if __name__ == "__main__":
     parser = CommonCLIParser()
-    parser.add_formula_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
+    parser.add_component_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
     config = parser.parse_argv()
+    print(config)
 
     logging.basicConfig(level=logging.WARNING if config['verbose'] else logging.INFO)
     logging.captureWarnings(True)
