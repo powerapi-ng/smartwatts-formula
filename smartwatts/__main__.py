@@ -16,13 +16,17 @@
 
 import logging
 import signal
+import sys
+import json
 from collections import OrderedDict
+from typing import Dict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.actor import ActorInitError
 from powerapi.backendsupervisor import BackendSupervisor
 from powerapi.cli.parser import ComponentSubParser, store_true
 from powerapi.cli.tools import CommonCLIParser, PusherGenerator, PullerGenerator, ReportModifierGenerator
+from powerapi.cli import ConfigValidator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
 from powerapi.filter import Filter
@@ -116,7 +120,7 @@ def run_smartwatts(args) -> None:
     :param args: CLI arguments namespace
     :param logger: Logger to use for the actors
     """
-    fconf = args['formula']['smartwatts']
+    fconf = args['formula']
 
     logging.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
 
@@ -174,21 +178,68 @@ def run_smartwatts(args) -> None:
     logging.info('SmartWatts is shutting down...')
 
 
-if __name__ == "__main__":
+def get_config_file(argv):
+    i = 0
+    for s in argv:
+        if s == '--config-file':
+            if i + 1 == len(argv):
+                logging.error("config file path needed with argument --config-file")
+                exit(-1)
+            return argv[i+1]
+        i += 1
+    return None
+
+
+def get_config_from_file(file_path):
+    config_file = open(file_path, 'r')
+    return json.load(config_file)
+
+
+class SmartwattsConfigValidator(ConfigValidator):
+    @staticmethod
+    def validate(config: Dict):
+        if not ConfigValidator.validate(config):
+            return False
+        if 'formula' not in config:
+            logging.error('No configuration found for smartwatts formula')
+            return False
+
+        if 'disable-cpu-formula' not in config['formula']:
+            config['formula']['disable-cpu-formula'] = False
+        if 'disable-dram-formula' not in config['formula']:
+            config['formula']['disable-dram-formula'] = False
+        if 'cpu-rapl-ref-event' not in config['formula']:
+            config['formula']['cpu-rapl-ref-event'] = 'RAPL_ENERGY_PKG'
+        if 'dram-rapl-ref-event' not in config['formula']:
+            config['formula']['dram-rapl-ref-event'] = 'RAPL_ENERGY_DRAM'
+        if 'cpu-tdp' not in config['formula']:
+            config['formula']['cpu-tdp'] = 125
+        if 'cpu-base-clock' not in config['formula']:
+            config['formula']['cpu-base-clock'] = 100
+        if 'sensor-reports-frequency' not in config['formula']:
+            config['formula']['sensor-reports-frequency'] = 1000
+        if 'learn-min-samples-required' not in config['formula']:
+            config['formula']['learn-min-samples-required'] = 10
+        if 'learn-history-window-size' not in config['formula']:
+            config['formula']['learn-history-window-size'] = 60
+        return True
+        
+
+def get_config_from_cli():
     parser = CommonCLIParser()
     parser.add_component_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
-    config = parser.parse_argv()
+    return parser.parse_argv()
+
+
+if __name__ == "__main__":
+    config_file_path = get_config_file(sys.argv)
+    config = get_config_from_file(config_file_path) if config_file_path is not None else get_config_from_cli()
+    if not SmartwattsConfigValidator.validate(config):
+        exit(-1)
     print(config)
 
     logging.basicConfig(level=logging.WARNING if config['verbose'] else logging.INFO)
     logging.captureWarnings(True)
-
-    # FIXME: Better error handling when the user doesn't provide a formula parameter.
-    try:
-        config['formula']['smartwatts']
-    except KeyError:
-        logging.error('No configuration found for SmartWatts formula')
-        exit(-1)
 
     run_smartwatts(config)
     exit(0)
