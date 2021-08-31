@@ -197,6 +197,8 @@ class SmartWattsFormula:
         :param system_msr: MSR events group of System target
         :return: Average frequency of the Package
         """
+        import logging
+        extra_args = {'actor_name': 'FORMULA'}
         return (self.cpu_topology.get_base_frequency() * system_msr['APERF']) / system_msr['MPERF']
 
     def get_power_model(self, system_core):

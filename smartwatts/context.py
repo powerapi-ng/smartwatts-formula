@@ -17,8 +17,6 @@
 import re
 from enum import Enum
 
-from powerapi.formula import FormulaState
-
 
 class SmartWattsFormulaScope(Enum):
     """
@@ -51,24 +49,3 @@ class SmartWattsFormulaConfig:
         self.cpu_topology = cpu_topology
         self.min_samples_required = min_samples_required
         self.history_window_size = history_window_size
-
-
-class SmartWattsFormulaState(FormulaState):
-    """
-    State of the SmartWatts formula actor.
-    """
-
-    def __init__(self, actor, pushers, metadata, config):
-        """
-        Initialize a new formula state object.
-        :param actor: Actor of the formula
-        :param pushers: Dictionary of available pushers
-        :param config: Configuration of the formula
-        """
-        FormulaState.__init__(self, actor, pushers, metadata)
-        self.config = config
-
-        m = re.search(r'^\(\'(.*)\', \'(.*)\', \'(.*)\'\)$', actor.name)  # TODO: Need a better way to get these information
-        self.dispatcher = m.group(1)
-        self.sensor = m.group(2)
-        self.socket = int(m.group(3))
