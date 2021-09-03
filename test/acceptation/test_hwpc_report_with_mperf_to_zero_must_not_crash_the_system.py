@@ -72,18 +72,18 @@ def test_normal_behaviour(mongo_database, shutdown_system):
                                             'uri': MONGO_URI,
                                             'db': MONGO_DATABASE_NAME,
                                             'collection': 'test_result_formula'}},
-              'formula': {'disable-cpu-formula': False,
-                          'disable-dram-formula': True,
-                          'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
-                          'cpu-tdp': 125,
-                          'cpu-base-clock': 100,
-                          'cpu-ratio-min': 4,
-                          'cpu-ratio-base': 19,
-                          'cpu-ratio-max': 42,
-                          'cpu-error-threshold': 2.0,
-                          'sensor-reports-frequency': 1000,
-                          'learn-min-samples-required': 10,
-                          'learn-history-window-size': 60}}
+              'disable-cpu-formula': False,
+              'disable-dram-formula': True,
+              'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
+              'cpu-tdp': 125,
+              'cpu-base-clock': 100,
+              'cpu-ratio-min': 4,
+              'cpu-ratio-base': 19,
+              'cpu-ratio-max': 42,
+              'cpu-error-threshold': 2.0,
+              'sensor-reports-frequency': 1000,
+              'learn-min-samples-required': 10,
+              'learn-history-window-size': 60}
 
     run_smartwatts(config)
     check_db()

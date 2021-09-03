@@ -25,7 +25,7 @@ def smartwatts_timeline_without_hwpc_for_first_tick(smartwatts_timeline):
             if report['target'] == 'all':
                 timeline.append(report)
         else:
-a            timeline.append(report)
+            timeline.append(report)
     return timeline
 
 

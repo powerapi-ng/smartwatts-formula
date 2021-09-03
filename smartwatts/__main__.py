@@ -23,7 +23,8 @@ from typing import Dict
 
 
 from powerapi import __version__ as powerapi_version
-from powerapi.dispatcher import DispatcherActor, RouteTable
+from powerapi.dispatcher import RouteTable
+
 from powerapi.cli import ConfigValidator
 from powerapi.cli.tools import ComponentSubParser, store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
 from powerapi.message import DispatcherStartMessage
@@ -36,6 +37,7 @@ from powerapi.supervisor import Supervisor
 
 
 from smartwatts import __version__ as smartwatts_version
+from smartwatts.dispatcher import SmartwattsDispatcherActor
 from smartwatts.actor import SmartWattsFormulaActor, SmartwattsValues
 from smartwatts.context import SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
@@ -46,7 +48,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     Construct and returns the SmartWatts cli parameters parser.
     :return: SmartWatts cli parameters parser
     """
-    parser = ComponentSubParser('smartwatts')
+    parser = CommonCLIParser()
 
     # Formula control parameters
     parser.add_argument('disable-cpu-formula', help='Disable CPU formula', flag=True, type=bool, default=False, action=store_true)
@@ -93,7 +95,7 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     """
     formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'], fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-history-window-size'])
     dispatcher_start_message = DispatcherStartMessage('system', 'cpu_dispatcher', SmartWattsFormulaActor, SmartwattsValues(formula_pushers, power_pushers, formula_config), route_table, 'cpu')
-    cpu_dispatcher = supervisor.launch(DispatcherActor, dispatcher_start_message)
+    cpu_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(filter_rule, cpu_dispatcher)
 
 
@@ -110,7 +112,7 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
     """
     formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.DRAM, fconf['sensor-reports-frequency'], fconf['dram-rapl-ref-event'], fconf['dram-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-history-window-size'])
     dispatcher_start_message = DispatcherStartMessage('system', 'dram_dispatcher', SmartWattsFormulaActor, SmartwattsValues(formula_pushers, power_pushers, formula_config), route_table, 'dram')
-    dram_dispatcher = supervisor.launch(DispatcherActor, dispatcher_start_message)
+    dram_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(lambda msg: True, dram_dispatcher)
 
 
@@ -120,7 +122,7 @@ def run_smartwatts(args) -> None:
     :param args: CLI arguments namespace
     :param logger: Logger to use for the actors
     """
-    fconf = args['formula']
+    fconf = args
 
     logging.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
 
@@ -174,7 +176,6 @@ def run_smartwatts(args) -> None:
         for puller_name in pullers_info:
             puller_cls, puller_start_message = pullers_info[puller_name]
             supervisor.launch(puller_cls, puller_start_message)
-
     except InitializationException as exn:
         logging.error('Actor initialization error: ' + exn.msg)
         supervisor.shutdown()
@@ -230,11 +231,9 @@ class SmartwattsConfigValidator(ConfigValidator):
         if 'learn-history-window-size' not in config['formula']:
             config['formula']['learn-history-window-size'] = 60
         return True
-        
 
 def get_config_from_cli():
-    parser = CommonCLIParser()
-    parser.add_component_subparser('formula', generate_smartwatts_parser(), 'specify the formula to use')
+    parser = generate_smartwatts_parser()
     return parser.parse_argv()
 
 
