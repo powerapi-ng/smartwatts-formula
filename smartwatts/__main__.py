@@ -27,7 +27,7 @@ from powerapi.dispatcher import DispatcherActor, RouteTable
 from powerapi.cli import ConfigValidator
 from powerapi.cli.tools import ComponentSubParser, store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
 from powerapi.message import DispatcherStartMessage
-from powerapi.report import HWPCReport, FormulaReport
+from powerapi.report import HWPCReport, FormulaReport, PowerReport
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.filter import Filter
 from powerapi.actor import InitializationException
@@ -155,7 +155,7 @@ def run_smartwatts(args) -> None:
         pushers_power = {}
         for pusher_name in pushers_info:
             pusher_cls, pusher_start_message = pushers_info[pusher_name]
-            if pusher_start_message.database.report_type == HWPCReport:
+            if pusher_start_message.database.report_type == PowerReport:
                 pushers_power[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
             elif pusher_start_message.database.report_type == FormulaReport:
                 pushers_formula[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
