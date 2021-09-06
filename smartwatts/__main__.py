@@ -28,7 +28,7 @@ from powerapi.dispatcher import RouteTable
 from powerapi.cli import ConfigValidator
 from powerapi.cli.tools import ComponentSubParser, store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
 from powerapi.message import DispatcherStartMessage
-from powerapi.report import HWPCReport, FormulaReport, PowerReport
+from powerapi.report import HWPCReport, PowerReport
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.filter import Filter
 from powerapi.actor import InitializationException
@@ -37,6 +37,7 @@ from powerapi.supervisor import Supervisor
 
 
 from smartwatts import __version__ as smartwatts_version
+from smartwatts.report import FormulaReport
 from smartwatts.dispatcher import SmartwattsDispatcherActor
 from smartwatts.actor import SmartWattsFormulaActor, SmartwattsValues
 from smartwatts.context import SmartWattsFormulaScope, SmartWattsFormulaConfig
@@ -150,9 +151,9 @@ def run_smartwatts(args) -> None:
     try:
         logging.info('Starting SmartWatts actors...')
 
-
-
-        pushers_info = PusherGenerator().generate(args)
+        pusher_generator = PusherGenerator()
+        pusher_generator.add_model_factory('FormulaReport', FormulaReport)
+        pushers_info = pusher_generator.generate(args)
         pushers_formula = {}
         pushers_power = {}
         for pusher_name in pushers_info:

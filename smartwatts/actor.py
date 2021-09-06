@@ -22,9 +22,9 @@ from sklearn.exceptions import NotFittedError
 
 from powerapi.formula import AbstractCpuDramFormula, FormulaValues
 from powerapi.message import FormulaStartMessage
-from powerapi.report import HWPCReport, FormulaReport, PowerReport
+from powerapi.report import HWPCReport, PowerReport
 
-
+from .report import FormulaReport
 from .context import SmartWattsFormulaConfig
 from .formula import SmartWattsFormula
 
