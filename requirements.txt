@@ -1,2 +1,2 @@
-powerapi [mongodb, influxdb, opentsdb, prometheus] == 0.9.3
+powerapi [mongodb, influxdb, opentsdb, prometheus] == 0.10.0
 scikit-learn
