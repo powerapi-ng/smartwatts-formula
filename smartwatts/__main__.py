@@ -209,28 +209,25 @@ class SmartwattsConfigValidator(ConfigValidator):
     def validate(config: Dict):
         if not ConfigValidator.validate(config):
             return False
-        if 'formula' not in config:
-            logging.error('No configuration found for smartwatts formula')
-            return False
 
-        if 'disable-cpu-formula' not in config['formula']:
-            config['formula']['disable-cpu-formula'] = False
-        if 'disable-dram-formula' not in config['formula']:
-            config['formula']['disable-dram-formula'] = False
-        if 'cpu-rapl-ref-event' not in config['formula']:
-            config['formula']['cpu-rapl-ref-event'] = 'RAPL_ENERGY_PKG'
-        if 'dram-rapl-ref-event' not in config['formula']:
-            config['formula']['dram-rapl-ref-event'] = 'RAPL_ENERGY_DRAM'
-        if 'cpu-tdp' not in config['formula']:
-            config['formula']['cpu-tdp'] = 125
-        if 'cpu-base-clock' not in config['formula']:
-            config['formula']['cpu-base-clock'] = 100
-        if 'sensor-reports-frequency' not in config['formula']:
-            config['formula']['sensor-reports-frequency'] = 1000
-        if 'learn-min-samples-required' not in config['formula']:
-            config['formula']['learn-min-samples-required'] = 10
-        if 'learn-history-window-size' not in config['formula']:
-            config['formula']['learn-history-window-size'] = 60
+        if 'disable-cpu-formula' not in config:
+            config['disable-cpu-formula'] = False
+        if 'disable-dram-formula' not in config:
+            config['disable-dram-formula'] = False
+        if 'cpu-rapl-ref-event' not in config:
+            config['cpu-rapl-ref-event'] = 'RAPL_ENERGY_PKG'
+        if 'dram-rapl-ref-event' not in config:
+            config['dram-rapl-ref-event'] = 'RAPL_ENERGY_DRAM'
+        if 'cpu-tdp' not in config:
+            config['cpu-tdp'] = 125
+        if 'cpu-base-clock' not in config:
+            config['cpu-base-clock'] = 100
+        if 'sensor-reports-frequency' not in config:
+            config['sensor-reports-frequency'] = 1000
+        if 'learn-min-samples-required' not in config:
+            config['learn-min-samples-required'] = 10
+        if 'learn-history-window-size' not in config:
+            config['learn-history-window-size'] = 60
         return True
 
 def get_config_from_cli():
