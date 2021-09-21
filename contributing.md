@@ -1,6 +1,6 @@
-# Contributing to PowerAPI
+# Contributing to SmartWatts
 
-Thank you for your interest in contributing to PowerAPI! There are multiple ways to contribute, and we appreciate all contributions.
+Thank you for your interest in contributing to SmartWatts! There are multiple ways to contribute, and we appreciate all contributions.
 
 # Ways to contribute
 
@@ -12,17 +12,17 @@ Each pull request should pass the tests and be correctly linted (`pylint` and
 Each pull request have to be reviewed before beeing accepted. Some modifications can be
 asked by the projet's managers.
 
-Here is different ways to contribute to PowerAPI.
+Here is different ways to contribute to SmartWatts.
 
 ## Bug report
 
-If you are working with PowerAPI and you encounter a bug, please let us know.
+If you are working with SmartWatts and you encounter a bug, please let us know.
 You are welcome to submit an issue which describe the bug and it context with a
 small test or a code snippet that reproduce the issue.
 
 ## Bug Fixes
 
-If you are interested to contribute to PowerAPI you can fixes reported bugs.
+If you are interested to contribute to SmartWatts you can fixes reported bugs.
 They are listed in the issues with the label _bug_
 
 Your pull request should contain a test that reproduce the bug, if the test do
