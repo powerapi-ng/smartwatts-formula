@@ -15,9 +15,12 @@ The documentation is available [here](http://powerapi.org).
 
 ## Contributing
 
-If you would like to contribute code you can do so through GitHub by forking the repository and sending a pull request.
+If you would like to contribute code you can do so through GitHub by forking the
+repository and sending a pull request.
+You should start by reading the [contribution guide](https://github.com/powerapi-ng/smartwatts-formula/blob/master/contributing.md)
 
-When submitting code, please make every effort to follow existing conventions and style in order to keep the code as readable as possible.
+When submitting code, please check that it is conform by using `pylint` and
+`flake8` with the configurations files at the root of the project.
 
 ## Publications
 
