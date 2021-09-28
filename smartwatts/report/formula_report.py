@@ -66,8 +66,14 @@ class FormulaReport(Report):
 
     @staticmethod
     def from_mongodb(data: Dict) -> FormulaReport:
+        """
+        Cast from mongoDB
+        """
         return FormulaReport.from_json(data)
 
     @staticmethod
     def to_mongodb(report: FormulaReport) -> Dict:
+        """
+        Cast to mongoDB
+        """
         return report.__dict__

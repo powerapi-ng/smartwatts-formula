@@ -41,4 +41,3 @@ class SmartwattsDispatcherActor(DispatcherActor):
         if self._exit_mode and self.formula_pool == {}:
             for _, pusher in self.formula_values.pushers.items():
                 self.send(pusher, EndMessage(self.name))
-    

@@ -18,9 +18,7 @@ import logging
 import signal
 import sys
 import json
-from collections import OrderedDict
 from typing import Dict
-
 
 from powerapi import __version__ as powerapi_version
 from powerapi.dispatcher import RouteTable
@@ -33,8 +31,6 @@ from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.filter import Filter
 from powerapi.actor import InitializationException
 from powerapi.supervisor import Supervisor
-
-
 
 from smartwatts import __version__ as smartwatts_version
 from smartwatts.report import FormulaReport
@@ -80,7 +76,10 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     return parser
 
 
-def filter_rule(msg):
+def filter_rule(_):
+    """
+    Rule of filter. Here none
+    """
     return True
 
 
@@ -94,8 +93,13 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     :param cpu_topology: CPU topology information
     :param pushers: Reports pushers
     """
-    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'], fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-history-window-size'])
-    dispatcher_start_message = DispatcherStartMessage('system', 'cpu_dispatcher', SmartWattsFormulaActor, SmartwattsValues(formula_pushers, power_pushers, formula_config), route_table, 'cpu')
+    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'],
+                                             fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'],
+                                             cpu_topology, fconf['learn-min-samples-required'],
+                                             fconf['learn-history-window-size'])
+    dispatcher_start_message = DispatcherStartMessage('system', 'cpu_dispatcher', SmartWattsFormulaActor,
+                                                      SmartwattsValues(formula_pushers, power_pushers,
+                                                                       formula_config), route_table, 'cpu')
     cpu_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(filter_rule, cpu_dispatcher)
 
@@ -111,8 +115,19 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
     :param pushers: Reports pushers
     :return: Initialized DRAM dispatcher actor
     """
-    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.DRAM, fconf['sensor-reports-frequency'], fconf['dram-rapl-ref-event'], fconf['dram-error-threshold'], cpu_topology, fconf['learn-min-samples-required'], fconf['learn-history-window-size'])
-    dispatcher_start_message = DispatcherStartMessage('system', 'dram_dispatcher', SmartWattsFormulaActor, SmartwattsValues(formula_pushers, power_pushers, formula_config), route_table, 'dram')
+    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.DRAM,
+                                             fconf['sensor-reports-frequency'],
+                                             fconf['dram-rapl-ref-event'],
+                                             fconf['dram-error-threshold'],
+                                             cpu_topology,
+                                             fconf['learn-min-samples-required'],
+                                             fconf['learn-history-window-size'])
+    dispatcher_start_message = DispatcherStartMessage('system',
+                                                      'dram_dispatcher',
+                                                      SmartWattsFormulaActor,
+                                                      SmartwattsValues(formula_pushers,
+                                                                       power_pushers, formula_config),
+                                                      route_table, 'dram')
     dram_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(lambda msg: True, dram_dispatcher)
 
@@ -144,7 +159,7 @@ def run_smartwatts(args) -> None:
 
     def term_handler(_, __):
         supervisor.shutdown()
-        exit(0)
+        sys.exit(0)
 
     signal.signal(signal.SIGTERM, term_handler)
     signal.signal(signal.SIGINT, term_handler)
@@ -180,7 +195,7 @@ def run_smartwatts(args) -> None:
     except InitializationException as exn:
         logging.error('Actor initialization error: ' + exn.msg)
         supervisor.shutdown()
-        exit(-1)
+        sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
     supervisor.monitor()
@@ -188,23 +203,32 @@ def run_smartwatts(args) -> None:
 
 
 def get_config_file(argv):
+    """
+    Get config file from argv
+    """
     i = 0
     for s in argv:
         if s == '--config-file':
             if i + 1 == len(argv):
                 logging.error("config file path needed with argument --config-file")
-                exit(-1)
-            return argv[i+1]
+                sys.exit(-1)
+            return argv[i + 1]
         i += 1
     return None
 
 
 def get_config_from_file(file_path):
+    """
+    Get the config from the config file
+    """
     config_file = open(file_path, 'r')
     return json.load(config_file)
 
 
 class SmartwattsConfigValidator(ConfigValidator):
+    """
+    Class used that check the config extracted and verify it conforms to constraints
+    """
     @staticmethod
     def validate(config: Dict):
         if not ConfigValidator.validate(config):
@@ -230,19 +254,23 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['learn-history-window-size'] = 60
         return True
 
+
 def get_config_from_cli():
+    """
+    Get he config from the cli args
+    """
     parser = generate_smartwatts_parser()
     return parser.parse_argv()
 
 
 if __name__ == "__main__":
     config_file_path = get_config_file(sys.argv)
-    config = get_config_from_file(config_file_path) if config_file_path is not None else get_config_from_cli()
-    if not SmartwattsConfigValidator.validate(config):
-        exit(-1)
-    logging.basicConfig(level=logging.WARNING if config['verbose'] else logging.INFO)
+    conf = get_config_from_file(config_file_path) if config_file_path is not None else get_config_from_cli()
+    if not SmartwattsConfigValidator.validate(conf):
+        sys.exit(-1)
+    logging.basicConfig(level=logging.WARNING if conf['verbose'] else logging.INFO)
     logging.captureWarnings(True)
 
-    logging.debug(str(config))
-    run_smartwatts(config)
-    exit(0)
+    logging.debug(str(conf))
+    run_smartwatts(conf)
+    sys.exit(0)

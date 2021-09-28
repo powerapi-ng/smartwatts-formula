@@ -30,6 +30,9 @@ from .formula import SmartWattsFormula
 
 
 class SmartwattsValues(FormulaValues):
+    """
+    Initialize values for Smartwatts
+    """
     def __init__(self, formula_pushers: Dict[str, ActorAddress], power_pushers: Dict[str, ActorAddress], config: SmartWattsFormulaConfig):
         """
         :param pushers: Pusher actors
@@ -51,6 +54,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         self.config = None
         self.ticks = None
         self.formula = None
+        self.formula_pushers = None
 
     def _initialization(self, message: FormulaStartMessage):
         AbstractCpuDramFormula._initialization(self, message)
@@ -59,8 +63,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         self.ticks = OrderedDict()
         self.formula = SmartWattsFormula(self.config.cpu_topology, self.config.history_window_size)
 
-
-    def receiveMsg_HWPCReport(self, message: HWPCReport, sender: ActorAddress):
+    def receiveMsg_HWPCReport(self, message: HWPCReport, _):
         """
         Process a HWPC report and send the result(s) to a pusher actor.
         :param msg: Received message
@@ -106,7 +109,6 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         avg_msr = self._gen_msr_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
 
-
         # compute RAPL power report
         rapl_power = rapl[self.config.rapl_event]
         power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0))
@@ -148,7 +150,6 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, model, model_error))
         return power_reports, formula_reports
-
 
     def _gen_formula_report(self, timestamp, pkg_frequency, model, error):
         """

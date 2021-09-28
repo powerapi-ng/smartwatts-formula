@@ -60,4 +60,4 @@ class CPUTopology:
         Compute the supported frequencies for this CPU.
         :return: A list of supported frequencies in MHz
         """
-        return [freq for freq in range(self.get_min_frequency(), self.get_max_frequency() + 1, self.freq_bclk)]
+        return list(range(self.get_min_frequency(), self.get_max_frequency() + 1, self.freq_bclk))

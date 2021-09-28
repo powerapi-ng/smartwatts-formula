@@ -25,14 +25,12 @@ class PowerModelNotInitializedException(Exception):
     """
     This exception happens when a user try to compute a power estimation without having learned a power model.
     """
-    pass
 
 
 class NotEnoughReportsInHistoryException(Exception):
     """
     This exception happens when a user try to learn a power model without having enough reports in history.
     """
-    pass
 
 
 class History:
@@ -93,11 +91,11 @@ class PowerModel:
         if len(self.history) < min_samples:
             return
 
-        fit_intercept = True if len(self.history) == self.history.max_length else False
+        fit_intercept = len(self.history) == self.history.max_length
         model = Regression(fit_intercept=fit_intercept, positive=True).fit(self.history.X, self.history.y)
 
         # Discard the new model when the intercept is not in specified range
-        if not (min_intercept <= model.intercept_ < max_intercept):
+        if not min_intercept <= model.intercept_ < max_intercept:
             return
 
         self.model = model
@@ -197,8 +195,6 @@ class SmartWattsFormula:
         :param system_msr: MSR events group of System target
         :return: Average frequency of the Package
         """
-        import logging
-        extra_args = {'actor_name': 'FORMULA'}
         return (self.cpu_topology.get_base_frequency() * system_msr['APERF']) / system_msr['MPERF']
 
     def get_power_model(self, system_core):
