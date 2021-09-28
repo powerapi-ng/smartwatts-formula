@@ -4,6 +4,13 @@ RUN apt update && apt upgrade -y
 RUN apt install -y libblas-dev liblapack-dev libatlas-base-dev gfortran
 USER powerapi
 COPY --chown=powerapi . /tmp/smartwatts
+
+
+RUN cd /tmp/smartwatts && \
+    sed -i 's/ *-> *[[:alnum:]]*Report//g' $(find smartwatts/ -name "*.py") && \
+    sed -i 's/from __future__ import annotations//g' $(find smartwatts/ -name "*.py") && \
+    sed -i 's/python_requires = >= 3\.[0-9]/python_requires = >= 3.6/g' setup.cfg
+
 RUN pypy3 -m pip install --user --no-cache-dir "/tmp/smartwatts" && rm -r /tmp/smartwatts
 
 ENTRYPOINT ["pypy3", "-m", "smartwatts"]
