@@ -21,7 +21,7 @@ from thespian.actors import ActorAddress
 from sklearn.exceptions import NotFittedError
 
 from powerapi.formula import AbstractCpuDramFormula, FormulaValues
-from powerapi.message import FormulaStartMessage
+from powerapi.message import FormulaStartMessage, EndMessage
 from powerapi.report import HWPCReport, PowerReport
 
 from .report import FormulaReport
@@ -31,7 +31,7 @@ from .formula import SmartWattsFormula
 
 class SmartwattsValues(FormulaValues):
     """
-    Initialize values for Smartwatts
+    Initialize smartwatts values
     """
     def __init__(self, formula_pushers: Dict[str, ActorAddress], power_pushers: Dict[str, ActorAddress], config: SmartWattsFormulaConfig):
         """
@@ -86,6 +86,14 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
                 for name, pusher in self.formula_pushers.items():
                     self.send(pusher, report)
                     self.log_debug('send ' + str(report) + ' to ' + name)
+
+    def receiveMsg_EndMessage(self, message: EndMessage, sender: ActorAddress):
+        """
+        when receiving a EndMessage kill itself and send an EndMessage to all formula pushers
+        """
+        AbstractCpuDramFormula.receiveMsg_EndMessage(self, message, sender)
+        for _, pusher in self.formula_pushers.items():
+            self.send(pusher, EndMessage(self.name))
 
     def _process_oldest_tick(self):
         """

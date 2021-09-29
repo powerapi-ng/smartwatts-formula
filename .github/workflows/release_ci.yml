@@ -61,7 +61,7 @@ jobs:
            sudo apt install -f -y 
            sudo pip freeze 
 
-      - name: install virtuallwatts
+      - name: install Smartwatts
         run: | 
             sudo pip install .
       - name: Test with pytest
@@ -122,8 +122,8 @@ jobs:
           VERSION=$(grep "powerapi " setup.cfg | cut -d = -f 2)
           CPYTHON_VERSION=$(grep "FROM powerapi" Dockerfile-cpython | cut -d ":" -f 2)
           PYPY_VERSION=$(grep "FROM powerapi" Dockerfile-cpython | cut -d ":" -f 2 | cut -d "-" -f 2)
-          test VERSION == CPYTHON_VERSION
-          test VERSION == PYPY_VERSION
+          test $VERSION == $CPYTHON_VERSION
+          test $VERSION == $PYPY_VERSION
       - uses: actions/checkout@v2
       - name: Log in to Docker Hub
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
