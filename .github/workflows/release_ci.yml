@@ -137,13 +137,13 @@ jobs:
           push: true
           file: Dockerfile-cpython
           tags: powerapi/smartwatts-formula:latest, powerapi/smartwatts-formula:${{needs.check_release.outputs.version}}
-      - name: Build and push pypy image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-        with:
-          context: .
-          push: true
-          file: Dockerfile-pypy
-          tags: powerapi/smartwatts-formula:pypy-latest, powerapi/smartwatts-formula:pypy-${{needs.check_release.outputs.version}}
+      # - name: Build and push pypy image
+      #   uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      #   with:
+      #     context: .
+      #     push: true
+      #     file: Dockerfile-pypy
+      #     tags: powerapi/smartwatts-formula:pypy-latest, powerapi/smartwatts-formula:pypy-${{needs.check_release.outputs.version}}
   build_deb_package:
     name: Build debian binary package
     runs-on: ubuntu-latest
@@ -219,7 +219,7 @@ jobs:
           github-token: ${{ secrets.github_token }}
           preset: angular
           output-file: ~/pre-changelog.md
-          release-count: 2
+          release-count: 1
       - name: Create Changelog
         env:
           CHANGELOG_CONTENT: ${{ steps.changelog.outputs.clean_changelog }}
@@ -233,4 +233,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{needs.check_release.outputs.version}}
-        run: gh release create $VERSION -d -t $VERSION -F ~/final-changelog.md ~/deb/*
+        run: gh release create v$VERSION -d -t v$VERSION -F ~/final-changelog.md ~/deb/*
