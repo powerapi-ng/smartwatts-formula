@@ -30,7 +30,7 @@ class SmartWattsFormulaConfig:
     Global config of the SmartWatts formula.
     """
 
-    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required, history_window_size):
+    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required, history_window_size, real_time_mode):
         """
         Initialize a new formula config object.
         :param scope: Scope of the formula
@@ -48,3 +48,4 @@ class SmartWattsFormulaConfig:
         self.cpu_topology = cpu_topology
         self.min_samples_required = min_samples_required
         self.history_window_size = history_window_size
+        self.real_time_mode = real_time_mode

@@ -83,7 +83,8 @@ def test_normal_behaviour(mongo_database, shutdown_system):
               'cpu-error-threshold': 2.0,
               'sensor-reports-frequency': 1000,
               'learn-min-samples-required': 10,
-              'learn-history-window-size': 60}
+              'learn-history-window-size': 60,
+              'real-time-mode': False}
 
     run_smartwatts(config)
     check_db()

@@ -58,9 +58,9 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     # CPU topology information
     parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=125)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio', type=int, default=10)
-    parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio', type=int, default=23)
-    parser.add_argument('cpu-ratio-max', help='CPU maximal frequency ratio (with Turbo-Boost)', type=int, default=40)
+    parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio (in MHz)', type=int, default=100)
+    parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio (in MHz)', type=int, default=2300)
+    parser.add_argument('cpu-ratio-max', help='CPU maximal frequency ratio (In MHz, with Turbo-Boost)', type=int, default=4000)
 
     # Formula error threshold
     parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=2.0)
@@ -252,6 +252,15 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['learn-min-samples-required'] = 10
         if 'learn-history-window-size' not in config:
             config['learn-history-window-size'] = 60
+
+        # Model use frequency in 100MHz
+        if 'cpu-ratio-base' in config:
+            config['cpu-ratio-base'] = config['cpu-ratio-base'] / 100
+        if 'cpu-ratio-min' in config:
+            config['cpu-ratio-min'] = config['cpu-ratio-min'] / 100
+        if 'cpu-ratio-max' in config:
+            config['cpu-ratio-max'] = config['cpu-ratio-max'] / 100
+
         return True
 
 
