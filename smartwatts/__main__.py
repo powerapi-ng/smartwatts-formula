@@ -72,6 +72,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     # Learning parameters
     parser.add_argument('learn-min-samples-required', help='Minimum amount of samples required before trying to learn a power model', type=int, default=10)
     parser.add_argument('learn-history-window-size', help='Size of the history window used to keep samples to learn from', type=int, default=60)
+    parser.add_argument('real-time-mode', help='Pass the wait for reports from 4 ticks to 1', type=bool, default=False)
 
     return parser
 
@@ -96,7 +97,7 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'],
                                              fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'],
                                              cpu_topology, fconf['learn-min-samples-required'],
-                                             fconf['learn-history-window-size'])
+                                             fconf['learn-history-window-size'], fconf['real-time-mode'])
     dispatcher_start_message = DispatcherStartMessage('system', 'cpu_dispatcher', SmartWattsFormulaActor,
                                                       SmartwattsValues(formula_pushers, power_pushers,
                                                                        formula_config), route_table, 'cpu')
@@ -121,7 +122,8 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
                                              fconf['dram-error-threshold'],
                                              cpu_topology,
                                              fconf['learn-min-samples-required'],
-                                             fconf['learn-history-window-size'])
+                                             fconf['learn-history-window-size'],
+                                             fconf['real-time-mode'])
     dispatcher_start_message = DispatcherStartMessage('system',
                                                       'dram_dispatcher',
                                                       SmartWattsFormulaActor,
@@ -252,6 +254,8 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['learn-min-samples-required'] = 10
         if 'learn-history-window-size' not in config:
             config['learn-history-window-size'] = 60
+        if 'real-time-mode' not in config:
+            config['real-time-mode'] = False
         return True
 
 

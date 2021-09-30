@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Run smartwatts on a mongodb database that contain 10 hwpc report per target : 
+Run smartwatts on a mongodb database that contain 10 hwpc report per target :
 - all
 - mongodb
 - influxdb
@@ -52,6 +52,22 @@ def check_db():
         assert c_output.count_documents(query) == 1
 
 
+
+def check_db_real_time():
+    mongo = pymongo.MongoClient(MONGO_URI)
+    c_input = mongo[MONGO_DATABASE_NAME][MONGO_INPUT_COLLECTION_NAME]
+    c_output = mongo[MONGO_DATABASE_NAME][MONGO_OUTPUT_COLLECTION_NAME]
+
+    assert c_output.count_documents({}) == (c_input.count_documents({}) / 4) - 2
+
+    for report in c_input.find({'target': 'all'})[:5]:
+        ts = datetime.strptime(report['timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
+        query = {'timestamp': ts, 'sensor': report['sensor'],
+                 'target': 'rapl'}
+        assert c_output.count_documents(query) == 1
+
+
+
 @pytest.fixture
 def mongodb_content(smartwatts_timeline):
     return smartwatts_timeline
@@ -85,6 +101,43 @@ def test_normal_behaviour(mongo_database, shutdown_system):
               'cpu-error-threshold': 2.0,
               'sensor-reports-frequency': 1000,
               'learn-min-samples-required': 10,
-              'learn-history-window-size': 60}
+              'learn-history-window-size': 60,
+              'real-time-mode': False}
+    run_smartwatts(config)
+    check_db()
+
+
+
+def test_normal_behaviour_real_time(mongo_database, shutdown_system):
+    config = {'verbose': True,
+              'stream': False,
+              'input': {'puller_mongodb': {'type': 'mongodb',
+                                           'model': 'HWPCReport',
+                                           'uri': MONGO_URI,
+                                           'db': MONGO_DATABASE_NAME,
+                                           'collection': MONGO_INPUT_COLLECTION_NAME}},
+              'output': {'power_pusher': {'type': 'mongodb',
+                                          'model': 'PowerReport',
+                                          'uri': MONGO_URI,
+                                          'db': MONGO_DATABASE_NAME,
+                                          'collection': MONGO_OUTPUT_COLLECTION_NAME},
+                         'formula_pusher': {'type': 'mongodb',
+                                            'model': 'FormulaReport',
+                                            'uri': MONGO_URI,
+                                            'db': MONGO_DATABASE_NAME,
+                                            'collection': 'test_result_formula'}},
+              'disable-cpu-formula': False,
+              'disable-dram-formula': True,
+              'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
+              'cpu-tdp': 125,
+              'cpu-base-clock': 100,
+              'cpu-ratio-min': 4,
+              'cpu-ratio-base': 19,
+              'cpu-ratio-max': 42,
+              'cpu-error-threshold': 2.0,
+              'sensor-reports-frequency': 1000,
+              'learn-min-samples-required': 10,
+              'learn-history-window-size': 60,
+              'real-time-mode': True}
     run_smartwatts(config)
     check_db()
