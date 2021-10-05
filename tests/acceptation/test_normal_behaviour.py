@@ -140,4 +140,4 @@ def test_normal_behaviour_real_time(mongo_database, shutdown_system):
               'learn-history-window-size': 60,
               'real-time-mode': True}
     run_smartwatts(config)
-    check_db()
+    check_db_real_time()

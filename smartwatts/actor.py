@@ -55,6 +55,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         self.ticks = None
         self.formula = None
         self.formula_pushers = None
+        self.real_time_mode = None
 
     def _initialization(self, message: FormulaStartMessage):
         AbstractCpuDramFormula._initialization(self, message)
@@ -62,6 +63,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         self.formula_pushers = message.values.formula_pushers
         self.ticks = OrderedDict()
         self.formula = SmartWattsFormula(self.config.cpu_topology, self.config.history_window_size)
+        self.real_time_mode = self.config.real_time_mode
 
     def receiveMsg_HWPCReport(self, message: HWPCReport, _):
         """
@@ -76,16 +78,29 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
 
         # start to process the oldest tick only after receiving at least 5 ticks.
         # we wait before processing the ticks in order to mitigate the possible delay of the sensor/database.
-        if len(self.ticks) > 5:
-            power_reports, formula_reports = self._process_oldest_tick()
-            for report in power_reports:
-                for name, pusher in self.pushers.items():
-                    self.send(pusher, report)
-                    self.log_debug('send ' + str(report) + ' to ' + name)
-            for report in formula_reports:
-                for name, pusher in self.formula_pushers.items():
-                    self.send(pusher, report)
-                    self.log_debug('send ' + str(report) + ' to ' + name)
+        if self.real_time_mode:
+            if len(self.ticks) > 2:
+                power_reports, formula_reports = self._process_oldest_tick()
+                for report in power_reports:
+                    for name, pusher in self.pushers.items():
+                        self.send(pusher, report)
+                        self.log_debug('send ' + str(report) + ' to ' + name)
+                for report in formula_reports:
+                    for name, pusher in self.formula_pushers.items():
+                        self.send(pusher, report)
+                        self.log_debug('send ' + str(report) + ' to ' + name)
+
+        else:
+            if len(self.ticks) > 5:
+                power_reports, formula_reports = self._process_oldest_tick()
+                for report in power_reports:
+                    for name, pusher in self.pushers.items():
+                        self.send(pusher, report)
+                        self.log_debug('send ' + str(report) + ' to ' + name)
+                for report in formula_reports:
+                    for name, pusher in self.formula_pushers.items():
+                        self.send(pusher, report)
+                        self.log_debug('send ' + str(report) + ' to ' + name)
 
     def receiveMsg_EndMessage(self, message: EndMessage, sender: ActorAddress):
         """
