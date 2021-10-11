@@ -67,7 +67,7 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float, default=2.0)
 
     # Sensor information
-    parser.add_argument('sensor-reports-frequency', help='The frequency with which measurements are made (in milliseconds)', type=int, default=1000)
+    parser.add_argument('sensor-report-sampling-interval', help='The frequency with which measurements are made (in milliseconds)', type=int, default=1000)
 
     # Learning parameters
     parser.add_argument('learn-min-samples-required', help='Minimum amount of samples required before trying to learn a power model', type=int, default=10)
@@ -93,7 +93,7 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     :param cpu_topology: CPU topology information
     :param pushers: Reports pushers
     """
-    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'],
+    formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-report-sampling-interval'],
                                              fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'],
                                              cpu_topology, fconf['learn-min-samples-required'],
                                              fconf['learn-history-window-size'], fconf['real-time-mode'])
@@ -116,7 +116,7 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
     :return: Initialized DRAM dispatcher actor
     """
     formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.DRAM,
-                                             fconf['sensor-reports-frequency'],
+                                             fconf['sensor-report-sampling-interval'],
                                              fconf['dram-rapl-ref-event'],
                                              fconf['dram-error-threshold'],
                                              cpu_topology,
@@ -247,8 +247,8 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['cpu-tdp'] = 125
         if 'cpu-base-clock' not in config:
             config['cpu-base-clock'] = 100
-        if 'sensor-reports-frequency' not in config:
-            config['sensor-reports-frequency'] = 1000
+        if 'sensor-report-sampling-interval' not in config:
+            config['sensor-report-sampling-interval'] = 1000
         if 'learn-min-samples-required' not in config:
             config['learn-min-samples-required'] = 10
         if 'learn-history-window-size' not in config:

@@ -31,6 +31,6 @@ echo "
   "cpu-ratio-max": $maxfrequency,
   "cpu-error-threshold": 2.0,
   "disable-dram-formula": true,
-  "sensor-reports-frequency": 1000
+  "sensor-report-sampling-interval": 1000
 }
 " > ./config_file.json
