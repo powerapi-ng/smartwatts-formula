@@ -58,9 +58,9 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     # CPU topology information
     parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=125)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio', type=int, default=10)
-    parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio', type=int, default=23)
-    parser.add_argument('cpu-ratio-max', help='CPU maximal frequency ratio (with Turbo-Boost)', type=int, default=40)
+    parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio (in MHz)', type=int, default=100)
+    parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio (in MHz)', type=int, default=2300)
+    parser.add_argument('cpu-ratio-max', help='CPU maximal frequency ratio (In MHz, with Turbo-Boost)', type=int, default=4000)
 
     # Formula error threshold
     parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=2.0)
@@ -72,7 +72,6 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     # Learning parameters
     parser.add_argument('learn-min-samples-required', help='Minimum amount of samples required before trying to learn a power model', type=int, default=10)
     parser.add_argument('learn-history-window-size', help='Size of the history window used to keep samples to learn from', type=int, default=60)
-    parser.add_argument('real-time-mode', help='Pass the wait for reports from 4 ticks to 1', type=bool, default=False)
 
     return parser
 
@@ -97,7 +96,7 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     formula_config = SmartWattsFormulaConfig(SmartWattsFormulaScope.CPU, fconf['sensor-reports-frequency'],
                                              fconf['cpu-rapl-ref-event'], fconf['cpu-error-threshold'],
                                              cpu_topology, fconf['learn-min-samples-required'],
-                                             fconf['learn-history-window-size'], fconf['real-time-mode'])
+                                             fconf['learn-history-window-size'])
     dispatcher_start_message = DispatcherStartMessage('system', 'cpu_dispatcher', SmartWattsFormulaActor,
                                                       SmartwattsValues(formula_pushers, power_pushers,
                                                                        formula_config), route_table, 'cpu')
@@ -122,8 +121,7 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
                                              fconf['dram-error-threshold'],
                                              cpu_topology,
                                              fconf['learn-min-samples-required'],
-                                             fconf['learn-history-window-size'],
-                                             fconf['real-time-mode'])
+                                             fconf['learn-history-window-size'])
     dispatcher_start_message = DispatcherStartMessage('system',
                                                       'dram_dispatcher',
                                                       SmartWattsFormulaActor,
@@ -254,8 +252,15 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['learn-min-samples-required'] = 10
         if 'learn-history-window-size' not in config:
             config['learn-history-window-size'] = 60
-        if 'real-time-mode' not in config:
-            config['real-time-mode'] = False
+
+        # Model use frequency in 100MHz
+        if 'cpu-ratio-base' in config:
+            config['cpu-ratio-base'] = config['cpu-ratio-base'] / 100
+        if 'cpu-ratio-min' in config:
+            config['cpu-ratio-min'] = config['cpu-ratio-min'] / 100
+        if 'cpu-ratio-max' in config:
+            config['cpu-ratio-max'] = config['cpu-ratio-max'] / 100
+
         return True
 
 
