@@ -81,7 +81,7 @@ def test_normal_behaviour(mongo_database, shutdown_system):
               'cpu-ratio-base': 19,
               'cpu-ratio-max': 42,
               'cpu-error-threshold': 2.0,
-              'sensor-reports-frequency': 1000,
+              'sensor-report-sampling-interval': 1000,
               'learn-min-samples-required': 10,
               'learn-history-window-size': 60,
               'real-time-mode': False}
