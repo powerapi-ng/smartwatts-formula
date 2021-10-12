@@ -3,9 +3,8 @@ name: Release workflow
 on:
   push:
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-    branches:
-      - ci-migration
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+
 env:
   repository: https://github.com/powerapi-ng/smartwatts
 jobs:
@@ -36,7 +35,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Convert to python3.6 code
         if: ${{ matrix.python-version == 3.6 }}
-        run: | 
+        run: |
           wget https://raw.githubusercontent.com/powerapi-ng/powerapi-ci-env/main/to_36.sh
           /bin/bash to_36.sh smartwatts
       - name: Cache pip
@@ -54,16 +53,16 @@ jobs:
       - name: install powerapi
         if: ${{ matrix.python-version == 3.6 }}
         run: |
-           VERSION=$(grep "powerapi " setup.cfg | cut -d = -f 2) 
-           sudo pip install thespian 
-           wget https://github.com/powerapi-ng/powerapi/releases/download/1.0.0/python3-powerapi_1.0.0-1_all.deb
-           sudo dpkg -i python3-powerapi_1.0.0-1_all.deb || echo ok
-           sudo apt install -f -y 
-           sudo pip freeze 
+          VERSION=$(grep "powerapi " setup.cfg | cut -d = -f 2)
+          sudo pip install thespian
+          wget https://github.com/powerapi-ng/powerapi/releases/download/1.0.0/python3-powerapi_1.0.0-1_all.deb
+          sudo dpkg -i python3-powerapi_1.0.0-1_all.deb || echo ok
+          sudo apt install -f -y
+          sudo pip freeze
 
       - name: install Smartwatts
-        run: | 
-            sudo pip install .
+        run: |
+          sudo pip install .
       - name: Test with pytest
         run: |
           sudo python setup.py pytest
@@ -177,7 +176,7 @@ jobs:
           sed -i 's/pytest-asyncio >=0.14.0//g' setup.cfg
           sed -i 's/requests >=2.0//g' setup.cfg
       - name: Convert to python3.6 code
-        run: | 
+        run: |
           wget https://raw.githubusercontent.com/powerapi-ng/powerapi-ci-env/main/to_36.sh
           /bin/bash to_36.sh smartwatts
       - name: Create source package
