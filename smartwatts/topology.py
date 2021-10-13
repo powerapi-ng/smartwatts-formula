@@ -1,5 +1,5 @@
-# Copyright (C) 2018  INRIA
-# Copyright (C) 2018  University of Lille
+# Copyright (C) 2021  INRIA
+# Copyright (C) 2021  University of Lille
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 class CPUTopology:
     """
     This class stores the necessary information about the CPU topology.
