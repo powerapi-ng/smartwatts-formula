@@ -173,10 +173,8 @@ def run_smartwatts(args) -> None:
         pushers_formula = {}
         pushers_power = {}
 
-
         for pusher_name in pushers_info:
             pusher_cls, pusher_start_message = pushers_info[pusher_name]
-
 
             if pusher_start_message.database.report_type == PowerReport:
                 pushers_power[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
