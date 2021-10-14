@@ -63,6 +63,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         self.formula_pushers = message.values.formula_pushers
         self.ticks = OrderedDict()
         self.formula = SmartWattsFormula(self.config.cpu_topology, self.config.history_window_size)
+
         self.real_time_mode = self.config.real_time_mode
 
     def receiveMsg_HWPCReport(self, message: HWPCReport, _):

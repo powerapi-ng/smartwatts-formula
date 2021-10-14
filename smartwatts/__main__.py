@@ -103,7 +103,6 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     cpu_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(filter_rule, cpu_dispatcher)
 
-
 def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_topology, formula_pushers, power_pushers):
     """
     Setup DRAM formula actor.
@@ -174,6 +173,7 @@ def run_smartwatts(args) -> None:
         pushers_power = {}
         for pusher_name in pushers_info:
             pusher_cls, pusher_start_message = pushers_info[pusher_name]
+            print(pusher_start_message.database.report_type)
             if pusher_start_message.database.report_type == PowerReport:
                 pushers_power[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
             elif pusher_start_message.database.report_type == FormulaReport:
@@ -258,11 +258,11 @@ class SmartwattsConfigValidator(ConfigValidator):
 
         # Model use frequency in 100MHz
         if 'cpu-ratio-base' in config:
-            config['cpu-ratio-base'] = config['cpu-ratio-base'] / 100
+            config['cpu-ratio-base'] = int(config['cpu-ratio-base'] / 100)
         if 'cpu-ratio-min' in config:
-            config['cpu-ratio-min'] = config['cpu-ratio-min'] / 100
+            config['cpu-ratio-min'] = int(config['cpu-ratio-min'] / 100)
         if 'cpu-ratio-max' in config:
-            config['cpu-ratio-max'] = config['cpu-ratio-max'] / 100
+            config['cpu-ratio-max'] = int(config['cpu-ratio-max'] / 100)
 
         return True
 
