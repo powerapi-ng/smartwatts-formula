@@ -103,6 +103,7 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
     cpu_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
     report_filter.filter(filter_rule, cpu_dispatcher)
 
+
 def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_topology, formula_pushers, power_pushers):
     """
     Setup DRAM formula actor.
