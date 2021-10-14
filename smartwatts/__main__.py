@@ -172,13 +172,18 @@ def run_smartwatts(args) -> None:
         pushers_info = pusher_generator.generate(args)
         pushers_formula = {}
         pushers_power = {}
+
+
         for pusher_name in pushers_info:
             pusher_cls, pusher_start_message = pushers_info[pusher_name]
-            print(pusher_start_message.database.report_type)
+
+
             if pusher_start_message.database.report_type == PowerReport:
                 pushers_power[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
             elif pusher_start_message.database.report_type == FormulaReport:
                 pushers_formula[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
+            else:
+                raise InitializationException("Pusher parameters : Provide supported report typ as model for pusher")
 
         logging.info('CPU formula is %s' % ('DISABLED' if fconf['disable-cpu-formula'] else 'ENABLED'))
         if not fconf['disable-cpu-formula']:
