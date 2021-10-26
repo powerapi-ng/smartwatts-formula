@@ -58,9 +58,9 @@ def generate_smartwatts_parser() -> ComponentSubParser:
     # CPU topology information
     parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=125)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-ratio-min', help='CPU minimal frequency ratio (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-ratio-base', help='CPU base frequency ratio (in MHz)', type=int, default=2300)
-    parser.add_argument('cpu-ratio-max', help='CPU maximal frequency ratio (In MHz, with Turbo-Boost)', type=int, default=4000)
+    parser.add_argument('cpu-frequency-min', help='CPU minimal frequency (in MHz)', type=int, default=100)
+    parser.add_argument('cpu-frequency-base', help='CPU base frequency (in MHz)', type=int, default=2300)
+    parser.add_argument('cpu-frequency-max', help='CPU maximal frequency (In MHz, with Turbo-Boost)', type=int, default=4000)
 
     # Formula error threshold
     parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=2.0)
@@ -150,7 +150,7 @@ def run_smartwatts(args) -> None:
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
-    cpu_topology = CPUTopology(fconf['cpu-tdp'], fconf['cpu-base-clock'], fconf['cpu-ratio-min'], fconf['cpu-ratio-base'], fconf['cpu-ratio-max'])
+    cpu_topology = CPUTopology(fconf['cpu-tdp'], fconf['cpu-base-clock'], fconf['cpu-frequency-min'], fconf['cpu-frequency-base'], fconf['cpu-frequency-max'])
 
     report_filter = Filter()
 
@@ -261,12 +261,12 @@ class SmartwattsConfigValidator(ConfigValidator):
             config['real-time-mode'] = False
 
         # Model use frequency in 100MHz
-        if 'cpu-ratio-base' in config:
-            config['cpu-ratio-base'] = int(config['cpu-ratio-base'] / 100)
-        if 'cpu-ratio-min' in config:
-            config['cpu-ratio-min'] = int(config['cpu-ratio-min'] / 100)
-        if 'cpu-ratio-max' in config:
-            config['cpu-ratio-max'] = int(config['cpu-ratio-max'] / 100)
+        if 'cpu-frequency-base' in config:
+            config['cpu-frequency-base'] = int(config['cpu-frequency-base'] / 100)
+        if 'cpu-frequency-min' in config:
+            config['cpu-frequency-min'] = int(config['cpu-frequency-min'] / 100)
+        if 'cpu-frequency-max' in config:
+            config['cpu-frequency-max'] = int(config['cpu-frequency-max'] / 100)
 
         return True
 
