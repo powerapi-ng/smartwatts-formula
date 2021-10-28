@@ -17,14 +17,13 @@
 import logging
 import signal
 import sys
-import json
 from typing import Dict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.dispatcher import RouteTable
 
 from powerapi.cli import ConfigValidator
-from powerapi.cli.tools import ComponentSubParser, store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
+from powerapi.cli.tools import store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
 from powerapi.message import DispatcherStartMessage
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
@@ -40,7 +39,7 @@ from smartwatts.context import SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
 
 
-def generate_smartwatts_parser() -> ComponentSubParser:
+def generate_smartwatts_parser():
     """
     Construct and returns the SmartWatts cli parameters parser.
     :return: SmartWatts cli parameters parser
@@ -207,29 +206,6 @@ def run_smartwatts(args) -> None:
     logging.info('SmartWatts is shutting down...')
 
 
-def get_config_file(argv):
-    """
-    Get config file from argv
-    """
-    i = 0
-    for s in argv:
-        if s == '--config-file':
-            if i + 1 == len(argv):
-                logging.error("config file path needed with argument --config-file")
-                sys.exit(-1)
-            return argv[i + 1]
-        i += 1
-    return None
-
-
-def get_config_from_file(file_path):
-    """
-    Get the config from the config file
-    """
-    config_file = open(file_path, 'r')
-    return json.load(config_file)
-
-
 class SmartwattsConfigValidator(ConfigValidator):
     """
     Class used that check the config extracted and verify it conforms to constraints
@@ -271,17 +247,17 @@ class SmartwattsConfigValidator(ConfigValidator):
         return True
 
 
-def get_config_from_cli():
+def get_config():
     """
     Get he config from the cli args
     """
     parser = generate_smartwatts_parser()
-    return parser.parse_argv()
+    return parser.parse()
 
 
 if __name__ == "__main__":
-    config_file_path = get_config_file(sys.argv)
-    conf = get_config_from_file(config_file_path) if config_file_path is not None else get_config_from_cli()
+
+    conf = get_config()
     if not SmartwattsConfigValidator.validate(conf):
         sys.exit(-1)
     logging.basicConfig(level=logging.WARNING if conf['verbose'] else logging.INFO)
