@@ -23,7 +23,8 @@ from powerapi import __version__ as powerapi_version
 from powerapi.dispatcher import RouteTable
 
 from powerapi.cli import ConfigValidator
-from powerapi.cli.tools import store_true, ReportModifierGenerator, PullerGenerator, PusherGenerator, CommonCLIParser
+from powerapi.cli.tools import store_true, CommonCLIParser
+from powerapi.cli.generator import ReportModifierGenerator, PullerGenerator, PusherGenerator
 from powerapi.message import DispatcherStartMessage
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
