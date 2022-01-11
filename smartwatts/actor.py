@@ -137,7 +137,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         rapl_power = rapl[self.config.rapl_event]
         power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0))
 
-        if global_core == {}:
+        if not global_core:
             return power_reports, formula_reports
 
         # fetch power model to use
