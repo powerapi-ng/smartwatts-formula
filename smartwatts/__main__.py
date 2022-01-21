@@ -181,7 +181,7 @@ def run_smartwatts(args) -> None:
             elif pusher_start_message.database.report_type == FormulaReport:
                 pushers_formula[pusher_name] = supervisor.launch(pusher_cls, pusher_start_message)
             else:
-                raise InitializationException("Pusher parameters : Provide supported report typ as model for pusher")
+                raise InitializationException("Pusher parameters : Provide supported report type as model for pusher")
 
         logging.info('CPU formula is %s' % ('DISABLED' if fconf['disable-cpu-formula'] else 'ENABLED'))
         if not fconf['disable-cpu-formula']:
@@ -200,6 +200,10 @@ def run_smartwatts(args) -> None:
     except InitializationException as exn:
         logging.error('Actor initialization error: ' + exn.msg)
         supervisor.shutdown()
+        sys.exit(-1)
+    except PowerAPIException as exp:
+        supervisor.shutdown()
+        logging.error(f"PowerException Error error: {exp}" )
         sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
