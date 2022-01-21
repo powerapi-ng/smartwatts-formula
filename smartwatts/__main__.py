@@ -203,7 +203,7 @@ def run_smartwatts(args) -> None:
         sys.exit(-1)
     except PowerAPIException as exp:
         supervisor.shutdown()
-        logging.error(f"PowerException Error error: {exp}")
+        logging.error("PowerException Error error: %s", exp)
         sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
