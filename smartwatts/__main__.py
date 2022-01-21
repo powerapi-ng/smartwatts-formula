@@ -29,7 +29,7 @@ from powerapi.message import DispatcherStartMessage
 from powerapi.report import HWPCReport, PowerReport
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.filter import Filter
-from powerapi.actor import InitializationException
+from powerapi.actor import InitializationException, PowerAPIException
 from powerapi.supervisor import Supervisor
 
 from smartwatts import __version__ as smartwatts_version
@@ -203,7 +203,7 @@ def run_smartwatts(args) -> None:
         sys.exit(-1)
     except PowerAPIException as exp:
         supervisor.shutdown()
-        logging.error(f"PowerException Error error: {exp}" )
+        logging.error(f"PowerException Error error: {exp}")
         sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
