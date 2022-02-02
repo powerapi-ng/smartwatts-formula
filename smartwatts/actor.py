@@ -159,7 +159,16 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
             raw_target_power = model.compute_power_estimation(target_core)
             target_power, target_ratio = model.cap_power_estimation(raw_target_power, raw_global_power)
             target_power = model.apply_intercept_share(target_power, target_ratio)
-            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, raw_target_power, target_power, target_ratio, target_report.metadata))
+            power_reports.append(
+                self._gen_power_report(
+                    timestamp,
+                    target_name,
+                    model.hash,
+                    raw_target_power,
+                    target_power,
+                    target_ratio,
+                    target_report.metadata)
+            )
 
         # compute power model error from reference
         model_error = fabs(rapl_power - raw_global_power)
