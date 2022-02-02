@@ -135,7 +135,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
 
         # compute RAPL power report
         rapl_power = rapl[self.config.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0, dict()))
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0, {}))
 
         if not global_core:
             return power_reports, formula_reports
@@ -147,7 +147,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         # compute Global target power report
         try:
             raw_global_power = model.compute_power_estimation(global_core)
-            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0, dict()))
+            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0, {}))
         except NotFittedError:
             model.store_report_in_history(rapl_power, global_core)
             model.learn_power_model(self.config.min_samples_required, 0.0, self.config.cpu_topology.tdp)
