@@ -148,7 +148,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
 
         # compute RAPL power report
         rapl_power = rapl[self.config.rapl_event]
-        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0))
+        power_reports.append(self._gen_power_report(timestamp, 'rapl', self.config.rapl_event, 0.0, rapl_power, 1.0, {}))
 
         if not global_core:
             return power_reports, formula_reports
@@ -160,7 +160,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         # compute Global target power report
         try:
             raw_global_power = model.compute_power_estimation(global_core)
-            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0))
+            power_reports.append(self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0, {}))
         except NotFittedError:
             model.store_report_in_history(rapl_power, global_core)
             model.learn_power_model(self.config.min_samples_required, 0.0, self.config.cpu_topology.tdp)
@@ -172,7 +172,16 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
             raw_target_power = model.compute_power_estimation(target_core)
             target_power, target_ratio = model.cap_power_estimation(raw_target_power, raw_global_power)
             target_power = model.apply_intercept_share(target_power, target_ratio)
-            power_reports.append(self._gen_power_report(timestamp, target_name, model.hash, raw_target_power, target_power, target_ratio))
+            power_reports.append(
+                self._gen_power_report(
+                    timestamp,
+                    target_name,
+                    model.hash,
+                    raw_target_power,
+                    target_power,
+                    target_ratio,
+                    target_report.metadata)
+            )
 
         # compute power model error from reference
         model_error = fabs(rapl_power - raw_global_power)
@@ -210,7 +219,7 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         }
         return FormulaReport(timestamp, self.sensor, model.hash, metadata)
 
-    def _gen_power_report(self, timestamp, target, formula, raw_power, power, ratio):
+    def _gen_power_report(self, timestamp, target, formula, raw_power, power, ratio, metadata):
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -219,13 +228,13 @@ class SmartWattsFormulaActor(AbstractCpuDramFormula):
         :param power: Power estimation
         :return: Power report filled with the given parameters
         """
-        metadata = {
+        metadata.update({
             'scope': self.config.scope.value,
             'socket': self.socket,
             'formula': formula,
             'ratio': ratio,
             'predict': raw_power,
-        }
+        })
         return PowerReport(timestamp, self.sensor, target, power, metadata)
 
     def _gen_rapl_events_group(self, system_report):
