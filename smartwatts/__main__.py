@@ -143,7 +143,7 @@ def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_
                                                                        power_pushers, formula_config),
                                                       route_table, 'dram')
     dram_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
-    report_filter.filter(lambda msg: True, dram_dispatcher)
+    report_filter.filter(filter_rule, dram_dispatcher)
 
 
 def run_smartwatts(args) -> None:
