@@ -1,4 +1,4 @@
-FROM powerapi/powerapi:1.0.9
+FROM powerapi/powerapi:1.1.0
 USER root
 RUN apt update && apt upgrade -y
 RUN apt install -y libblas-dev liblapack-dev libatlas-base-dev gfortran

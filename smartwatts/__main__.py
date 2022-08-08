@@ -169,7 +169,7 @@ def run_smartwatts(args) -> None:
 
     report_modifier_list = ReportModifierGenerator().generate(fconf)
 
-    supervisor = Supervisor(args['verbose'])
+    supervisor = Supervisor(args['verbose'], args['actor_system'])
 
     def term_handler(_, __):
         supervisor.shutdown()
