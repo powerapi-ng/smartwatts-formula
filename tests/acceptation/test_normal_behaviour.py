@@ -42,6 +42,7 @@ from datetime import datetime
 import pytest
 
 import pymongo
+from powerapi.supervisor import SIMPLE_SYSTEM_IMP
 
 from smartwatts.__main__ import run_smartwatts
 from smartwatts.test_utils.reports import smartwatts_timeline
@@ -88,6 +89,7 @@ def mongodb_content(smartwatts_timeline):
 def test_normal_behaviour(mongo_database, shutdown_system):
     config = {'verbose': True,
               'stream': False,
+              'actor_system': SIMPLE_SYSTEM_IMP,
               'input': {'puller_mongodb': {'type': 'mongodb',
                                            'model': 'HWPCReport',
                                            'uri': MONGO_URI,
@@ -124,6 +126,7 @@ def test_normal_behaviour(mongo_database, shutdown_system):
 def test_normal_behaviour_real_time(mongo_database, shutdown_system):
     config = {'verbose': True,
               'stream': False,
+              'actor_system': SIMPLE_SYSTEM_IMP,
               'input': {'puller_mongodb': {'type': 'mongodb',
                                            'model': 'HWPCReport',
                                            'uri': MONGO_URI,
