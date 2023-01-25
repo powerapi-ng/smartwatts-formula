@@ -208,16 +208,12 @@ class ReportHandler(Handler):
         """
         return self.models[self._get_frequency_layer(self.compute_pkg_frequency(system_core))]
 
-    def handle(self, message:HWPCReport):
+    def handle(self, message: HWPCReport):
 
         """
          Process a HWPC report and send the result(s) to a pusher actor.
          :param message: Received message
         """
-        print('Tick size: '+str(len(self.state.ticks)))
-        print('Report ' + str(message))
-        print('Timestamp ' + str(message.timestamp))
-
         self.state.actor.logger.debug('received message ' + str(message))
         self.state.ticks.setdefault(message.timestamp, {}).update({message.target: message})
 
@@ -225,22 +221,18 @@ class ReportHandler(Handler):
         # we wait before processing the ticks in order to mitigate the possible delay of the sensor/database.
         if self.state.config.real_time_mode:
             if len(self.state.ticks) > 2:
-                print('Dealing with report...1')
                 power_reports, formula_reports = self._process_oldest_tick()
                 for report in power_reports:
                     for name, pusher in self.state.pushers.items():
                         pusher.send_data(report)
-                        print('send ' + str(report) + ' to ' + name)
                         self.state.actor.logger.debug('send ' + str(report) + ' to ' + name)
                 for report in formula_reports:
                     for name, pusher in self.state.formula_pushers.items():
                         pusher.send_data(report)
-                        print('send ' + str(report) + ' to ' + name)
                         self.state.actor.logger.debug('send ' + str(report) + ' to ' + name)
 
         else:
             if len(self.state.ticks) > 5:
-                print('Dealing with report...2')
                 power_reports, formula_reports = self._process_oldest_tick()
                 for report in power_reports:
                     for name, pusher in self.state.pushers.items():
@@ -256,7 +248,6 @@ class ReportHandler(Handler):
         Process the oldest tick stored in the stack and generate power reports for the running target(s).
         :return: Power reports of the running target(s)
         """
-        print('_process_oldest_tick 1')
         timestamp, hwpc_reports = self.state.ticks.popitem(last=False)
 
         # reports of the current tick
@@ -269,11 +260,10 @@ class ReportHandler(Handler):
         except KeyError:
             # cannot process this tick without the reference measurements
             return power_reports, formula_reports
-        print('_process_oldest_tick 2')
         rapl = self._gen_rapl_events_group(global_report)
         avg_msr = self._gen_msr_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
-        print('_process_oldest_tick 3')
+
         # compute RAPL power report
         rapl_power = rapl[self.state.config.rapl_event]
         power_reports.append(
@@ -281,23 +271,24 @@ class ReportHandler(Handler):
 
         if not global_core:
             return power_reports, formula_reports
-        print('_process_oldest_tick 4')
+
         # fetch power model to use
-        pkg_frequency = self.compute_pkg_frequency(avg_msr)
-        model = self.get_power_model(avg_msr)
-        print('_process_oldest_tick 5')
+        try:
+            pkg_frequency = self.compute_pkg_frequency(avg_msr)
+            model = self.get_power_model(avg_msr)
+        except ZeroDivisionError:
+            return power_reports, formula_reports
+
         # compute Global target power report
         try:
             raw_global_power = model.compute_power_estimation(global_core)
             power_reports.append(
                 self._gen_power_report(timestamp, 'global', model.hash, raw_global_power, raw_global_power, 1.0, {}))
         except NotFittedError:
-            print('_process_oldest_tick 6')
             model.store_report_in_history(rapl_power, global_core)
             model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
-            print('_process_oldest_tick 7')
             return power_reports, formula_reports
-        print('_process_oldest_tick 8')
+
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
@@ -419,4 +410,3 @@ class ReportHandler(Handler):
                 agg_core_events_group[event_name] += event_value
 
         return agg_core_events_group
-

@@ -27,6 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# pylint: disable=redefined-outer-name,unused-import
 """
 Run smartwatts on a mongodb database that contain 10 hwpc report per target
 
@@ -37,69 +38,31 @@ Run smartwatts on a mongodb database that contain 10 hwpc report per target
 The first hwpc report contains mperf value equals to 0
 Test if the system don't crash after receiving the first report and deal with the other report
 """
+import time
 from datetime import datetime
 import pytest
 
 import pymongo
-from powerapi.supervisor import SIMPLE_SYSTEM_IMP
 
-from smartwatts.__main__ import run_smartwatts
-from smartwatts.test_utils.reports import smartwatts_timeline_with_mperf_0, smartwatts_timeline
-from powerapi.test_utils.actor import shutdown_system
 from powerapi.test_utils.db.mongo import mongo_database
-from powerapi.test_utils.db.mongo import MONGO_URI, MONGO_INPUT_COLLECTION_NAME, MONGO_OUTPUT_COLLECTION_NAME, MONGO_DATABASE_NAME
+from powerapi.test_utils.unit import shutdown_system
+
+from smartwatts.test_utils.reports import smartwatts_timeline, smartwatts_timeline_with_mperf_0
+
+from tests.acceptation.acceptation_test_utils import formula_config, check_db, AbstractAcceptationTest
+
 
 @pytest.fixture
 def mongodb_content(smartwatts_timeline_with_mperf_0):
+    """
+    Define the content of the input database
+    :param smartwatts_timeline_with_mperf_0: The content of the database. One of the reports has mperf=0
+    :return: The content of the database
+    """
     return smartwatts_timeline_with_mperf_0
 
 
-def check_db():
-    mongo = pymongo.MongoClient(MONGO_URI)
-    c_input = mongo[MONGO_DATABASE_NAME][MONGO_INPUT_COLLECTION_NAME]
-    c_output = mongo[MONGO_DATABASE_NAME][MONGO_OUTPUT_COLLECTION_NAME]
-
-    assert c_output.count_documents({}) == (c_input.count_documents({}) / 4) - 6
-
-    for report in c_input.find({'target':'all'})[1:5]:
-        ts = datetime.strptime(report['timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
-        query = {'timestamp': ts, 'sensor': report['sensor'],
-                 'target': 'rapl'}
-        assert c_output.count_documents(query) == 1
-
-
-def test_normal_behaviour(mongo_database, shutdown_system):
-    config = {'verbose': 0,
-              'stream': False,
-              'actor_system': SIMPLE_SYSTEM_IMP,
-              'input': {'puller_mongodb': {'type': 'mongodb',
-                                           'model': 'HWPCReport',
-                                           'uri': MONGO_URI,
-                                           'db': MONGO_DATABASE_NAME,
-                                           'collection': MONGO_INPUT_COLLECTION_NAME}},
-              'output': {'power_pusher': {'type': 'mongodb',
-                                          'model': 'PowerReport',
-                                          'uri': MONGO_URI,
-                                          'db': MONGO_DATABASE_NAME,
-                                          'collection': MONGO_OUTPUT_COLLECTION_NAME},
-                         'formula_pusher': {'type': 'mongodb',
-                                            'model': 'FormulaReport',
-                                            'uri': MONGO_URI,
-                                            'db': MONGO_DATABASE_NAME,
-                                            'collection': 'test_result_formula'}},
-              'disable-cpu-formula': False,
-              'disable-dram-formula': True,
-              'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
-              'cpu-tdp': 125,
-              'cpu-base-clock': 100,
-              'cpu-frequency-min': 4,
-              'cpu-frequency-base': 19,
-              'cpu-frequency-max': 42,
-              'cpu-error-threshold': 2.0,
-              'sensor-report-sampling-interval': 1000,
-              'learn-min-samples-required': 10,
-              'learn-history-window-size': 60,
-              'real-time-mode': False}
-
-    run_smartwatts(config)
-    check_db()
+class TestSmartwattsFormulaWithMperf0(AbstractAcceptationTest):
+    """
+    Execute acceptation test for SmartwattsFormula by using MPERF = 0
+    """
