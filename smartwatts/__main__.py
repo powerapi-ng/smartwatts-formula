@@ -136,7 +136,7 @@ def setup_formula_actor(supervisor: BackendSupervisor, global_configuration: Dic
     dispatcher = SmartWattsDispatcherActor(name=dispatcher_name, formula_init_function=SmartWattsFormulaActor,
                                            power_pushers=power_pushers, formula_pushers=formula_pushers,
                                            route_table=route_table, device_id=device_id,
-                                           formula_config=formula_config)
+                                           formula_config=formula_config, level_logger=logging.getLogger().level)
 
     supervisor.launch_actor(dispatcher)
 
@@ -223,7 +223,8 @@ def run_smartwatts(args) -> BackendSupervisor:
                                 error_threshold=global_configuration['dram-error-threshold'],
                                 dispatcher_name='dram_dispatcher')
 
-        pullers_info = PullerGenerator(report_filter, report_modifier_list).generate(global_configuration)
+        pullers_info = PullerGenerator(report_filter=report_filter, report_modifier_list=report_modifier_list,
+                                       ).generate(global_configuration)
         for puller_name in pullers_info:
             puller = pullers_info[puller_name]
             supervisor.launch_actor(puller)
@@ -295,9 +296,14 @@ if __name__ == "__main__":
     conf = get_config()
     if not SmartWattsConfigValidator.validate(conf):
         sys.exit(-1)
-    logging.basicConfig(level=logging.WARNING if conf['verbose'] else logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if conf['verbose'] else logging.INFO)
     logging.captureWarnings(True)
 
     logging.debug(str(conf))
-    run_smartwatts(conf)
+    supervisor = run_smartwatts(conf)
+
+    while supervisor.are_all_actors_alive():
+        pass
+
+    supervisor.join()
     sys.exit(0)

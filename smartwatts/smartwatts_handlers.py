@@ -31,6 +31,7 @@ from hashlib import sha1
 from math import ldexp, fabs
 from pickle import dumps
 
+from powerapi.formula import FormulaPoisonPillMessageHandler
 from powerapi.formula.abstract_cpu_dram_formula import AbstractCpuDramFormulaState
 from powerapi.handler import Handler
 from powerapi.report import PowerReport, HWPCReport
@@ -410,3 +411,14 @@ class ReportHandler(Handler):
                 agg_core_events_group[event_name] += event_value
 
         return agg_core_events_group
+
+
+class SmartWattsFormulaPoisonPillMessageHandler(FormulaPoisonPillMessageHandler):
+    """
+    Smartwatts Handler for dealing with PoisonPillMessage
+    """
+
+    def teardown(self, soft=False):
+        FormulaPoisonPillMessageHandler.teardown(self, soft=soft)
+        for pusher in self.state.formula_pushers:
+            pusher.socket_interface.close()
