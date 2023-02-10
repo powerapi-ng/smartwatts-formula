@@ -65,6 +65,7 @@ class SmartWattsDispatcherActor(DispatcherActor):
                                             config=self.formula_config, sensor=self.device_id,
                                             level_logger=self.logger.level)
             self.state.supervisor.launch_actor(formula, start_message=False)
+            self.logger.debug('Formula '+formula.name+' created')
             return formula
 
         return factory
