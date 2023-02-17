@@ -79,6 +79,37 @@ EXPORTER_LABELS=["app","service","env"]
 
 EXPORTER_PORT=8124
 
+def configure_log_level():
+    """
+    Configure log level according to the value of `LOG_LEVEL`.
+
+    If `load_config_from_env()` has been called previously,
+    the value is read from the environment variable. Otherwise it
+    defaults to "INFO".
+    """
+    try:
+        log_level = {
+            "INFO": logging.INFO,
+            "DEBUG": logging.DEBUG,
+            "ERROR": logging.ERROR,
+            "WARNING": logging.WARNING,
+        }[LOG_LEVEL]
+        logging.basicConfig(
+            format="%(asctime)s#%(levelname)s:%(message)s", level=log_level
+        )
+    except Exception:
+        logger.error(
+            "Invalid log level, use DEBUG, INFO, WARNING or ERROR : %s",
+            LOG_LEVEL
+        )
+        raise
+    print(f"Log level {LOG_LEVEL}")
+    logging.debug("Debug Message")
+    logging.info("Info Message")
+    logging.warning("Warning Message")
+    logging.error("Error Message")
+
+
 def load_config_from_env():
     global LOG_LEVEL, REPORT_FREQ, ERROR_THRESHOLD,\
         MIN_SAMPLES_REQUIRED, HISTORY_WINDOW_SIZE, \
