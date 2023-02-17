@@ -1,5 +1,6 @@
 # Copyright (c) 2022, INRIA
 # Copyright (c) 2022, University of Lille
+# Copyright (c) 2022 Orange - All right reserved
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +31,7 @@
 import logging
 import signal
 import sys
+import traceback
 from typing import Dict
 
 from powerapi import __version__ as powerapi_version
@@ -46,12 +48,13 @@ from powerapi.actor import InitializationException, PowerAPIException
 from powerapi.supervisor import Supervisor
 
 from smartwatts import __version__ as smartwatts_version
+from smartwatts import configuration
 from smartwatts.report import FormulaReport
 from smartwatts.dispatcher import SmartwattsDispatcherActor
 from smartwatts.actor import SmartWattsFormulaActor, SmartwattsValues
 from smartwatts.context import SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.topology import CPUTopology
-
+from smartwatts.k8sapi import K8sMdtModifierActor, K8sMdtModifierStartMessage
 
 def generate_smartwatts_parser():
     """
@@ -114,7 +117,23 @@ def setup_cpu_formula_actor(supervisor, fconf, route_table, report_filter, cpu_t
                                                       SmartwattsValues(formula_pushers, power_pushers,
                                                                        formula_config), route_table, 'cpu')
     cpu_dispatcher = supervisor.launch(SmartwattsDispatcherActor, dispatcher_start_message)
-    report_filter.filter(filter_rule, cpu_dispatcher)
+
+    # Launch the modifier agent, which will add k8s metadata.
+    # The puller will send to our modifier instead of the Dispatcher
+    # and we pass the Dispatcher to our Modifier, which will
+    # forward the modified report
+    # FIXME: this should only be done when running on k8s
+    # but we have no parameter to know that 
+    k8s_mdt_modifier = supervisor.launch(
+        K8sMdtModifierActor,
+        K8sMdtModifierStartMessage(
+            "system",
+            "k8s_modifier_agent",
+            cpu_dispatcher,
+            fconf["k8sapi_mode"]
+        ),
+    )
+    report_filter.filter(filter_rule, k8s_mdt_modifier)
 
 
 def setup_dram_formula_actor(supervisor, fconf, route_table, report_filter, cpu_topology, formula_pushers, power_pushers):
@@ -150,7 +169,6 @@ def run_smartwatts(args) -> None:
     """
     Run PowerAPI with the SmartWatts formula.
     :param args: CLI arguments namespace
-    :param logger: Logger to use for the actors
     """
     fconf = args
 
@@ -182,6 +200,19 @@ def run_smartwatts(args) -> None:
 
         pusher_generator = PusherGenerator()
         pusher_generator.add_model_factory('FormulaReport', FormulaReport)
+        # We need to add CloudJoulePrometheusDB to the generator,
+        # as it does not exist in powerAPI.
+        pusher_generator.add_db_factory(
+            "cloudjoule_prom",
+            lambda db_config: CloudJoulePrometheusDB(
+                db_config["model"],
+                db_config["port"],
+                db_config["uri"],
+                db_config["metric_name"],
+                db_config["metric_description"],
+                db_config["labels"],
+            ),
+        )
         pushers_info = pusher_generator.generate(args)
         pushers_formula = {}
         pushers_power = {}
@@ -217,6 +248,11 @@ def run_smartwatts(args) -> None:
     except PowerAPIException as exp:
         supervisor.shutdown()
         logging.error("PowerException Error error: %s", exp)
+        sys.exit(-1)
+    except Exception as ex:
+        logging.error(f"Unexpected error: {ex} ")
+        supervisor.shutdown()
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
         sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
@@ -265,21 +301,14 @@ class SmartwattsConfigValidator(ConfigValidator):
         return True
 
 
-def get_config():
-    """
-    Get he config from the cli args
-    """
-    parser = generate_smartwatts_parser()
-    return parser.parse()
-
-
 if __name__ == "__main__":
 
-    conf = get_config()
+    configuration.load_config_from_env()
+    configuration.configure_log_level()
+    conf = configuration.get_smartwatt_config_map()
+
     if not SmartwattsConfigValidator.validate(conf):
         sys.exit(-1)
-    logging.basicConfig(level=logging.WARNING if conf['verbose'] else logging.INFO)
-    logging.captureWarnings(True)
 
     logging.debug(str(conf))
     run_smartwatts(conf)
