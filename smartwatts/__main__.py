@@ -72,7 +72,7 @@ def generate_smartwatts_parser():
                         default='RAPL_ENERGY_DRAM')
 
     # CPU topology information
-    parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=125)
+    parser.add_argument('cpu-tdp', help='CPU TDP (in Watts)', type=int, default=125)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
     parser.add_argument('cpu-frequency-min', help='CPU minimal frequency (in MHz)', type=int, default=100)
     parser.add_argument('cpu-frequency-base', help='CPU base frequency (in MHz)', type=int, default=2300)
@@ -80,9 +80,9 @@ def generate_smartwatts_parser():
                         default=4000)
 
     # Formula error threshold
-    parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float,
+    parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watts)', type=float,
                         default=2.0)
-    parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float,
+    parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watts)', type=float,
                         default=2.0)
 
     # Sensor information
