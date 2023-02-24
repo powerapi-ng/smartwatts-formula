@@ -106,13 +106,13 @@ def filter_rule(_):
     return True
 
 
-def setup_formula_actor(supervisor: BackendSupervisor, global_configuration: Dict, route_table: RouteTable,
+def setup_formula_actor(be_supervisor: BackendSupervisor, global_configuration: Dict, route_table: RouteTable,
                         report_filter: Filter, cpu_topology: CPUTopology, formula_pushers: Dict,
                         power_pushers: Dict, rapl_event: str, error_threshold: int, dispatcher_name: str,
                         device_id: str):
     """
     Setup CPU formula actor.
-    :param supervisor: Actor supervisor
+    :param be_supervisor: Actor supervisor
     :param global_configuration: Global configuration
     :param route_table: Reports routing table
     :param report_filter: Reports filter
@@ -138,7 +138,7 @@ def setup_formula_actor(supervisor: BackendSupervisor, global_configuration: Dic
                                            route_table=route_table, device_id=device_id,
                                            formula_config=formula_config, level_logger=logging.getLogger().level)
 
-    supervisor.launch_actor(dispatcher)
+    be_supervisor.launch_actor(dispatcher)
 
     report_filter.filter(filter_rule, dispatcher)
 
@@ -170,11 +170,11 @@ def run_smartwatts(args) -> BackendSupervisor:
 
     report_modifier_list = ReportModifierGenerator().generate(global_configuration)
 
-    supervisor = BackendSupervisor(global_configuration['stream'])  # Supervisor(args['verbose'], args['actor_system'])
+    be_supervisor = BackendSupervisor(global_configuration['stream'])  # Supervisor(args['verbose'], args['actor_system'])
 
     def term_handler(_, __):
         logging.info('SmartWatts is shutting down...')
-        supervisor.kill_actors()
+        be_supervisor.kill_actors()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, term_handler)
@@ -192,10 +192,10 @@ def run_smartwatts(args) -> BackendSupervisor:
             pusher = pushers_info[pusher_name]
 
             if pusher.state.report_model == PowerReport:
-                supervisor.launch_actor(pusher)
+                be_supervisor.launch_actor(pusher)
                 power_pushers[pusher_name] = pusher
             elif pusher.state.report_model == FormulaReport:
-                supervisor.launch_actor(pusher)
+                be_supervisor.launch_actor(pusher)
                 formula_pushers[pusher_name] = pusher
             else:
                 raise InitializationException("Pusher parameters : Provide supported report type as model for pusher")
@@ -204,7 +204,7 @@ def run_smartwatts(args) -> BackendSupervisor:
         if not global_configuration['disable-cpu-formula']:
             logging.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (
                 global_configuration['cpu-rapl-ref-event'], global_configuration['cpu-error-threshold']))
-            setup_formula_actor(supervisor=supervisor, global_configuration=global_configuration,
+            setup_formula_actor(be_supervisor=be_supervisor, global_configuration=global_configuration,
                                 route_table=route_table, report_filter=report_filter, cpu_topology=cpu_topology,
                                 formula_pushers=formula_pushers, power_pushers=power_pushers,
                                 device_id='cpu', rapl_event=global_configuration['cpu-rapl-ref-event'],
@@ -216,7 +216,7 @@ def run_smartwatts(args) -> BackendSupervisor:
         if not global_configuration['disable-dram-formula']:
             logging.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (
                 global_configuration['dram-rapl-ref-event'], global_configuration['dram-error-threshold']))
-            setup_formula_actor(supervisor=supervisor, global_configuration=global_configuration,
+            setup_formula_actor(be_supervisor=be_supervisor, global_configuration=global_configuration,
                                 route_table=route_table, report_filter=report_filter, cpu_topology=cpu_topology,
                                 formula_pushers=formula_pushers, power_pushers=power_pushers,
                                 device_id='dram', rapl_event=global_configuration['dram-rapl-ref-event'],
@@ -227,18 +227,18 @@ def run_smartwatts(args) -> BackendSupervisor:
                                        ).generate(global_configuration)
         for puller_name in pullers_info:
             puller = pullers_info[puller_name]
-            supervisor.launch_actor(puller)
+            be_supervisor.launch_actor(puller)
     except InitializationException as exn:
         logging.error('Actor initialization error: ' + exn.msg)
-        supervisor.kill_actors()
+        be_supervisor.kill_actors()
         sys.exit(-1)
     except PowerAPIException as exp:
         logging.error("PowerException error: %s", exp)
-        supervisor.kill_actors()
+        be_supervisor.kill_actors()
         sys.exit(-1)
 
     logging.info('SmartWatts is now running...')
-    return supervisor
+    return be_supervisor
 
 
 class SmartWattsConfigValidator(ConfigValidator):
