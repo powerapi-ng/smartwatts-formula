@@ -26,19 +26,3 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from thespian.actors import ChildActorExited, ActorAddress
-
-from powerapi.dispatcher import DispatcherActor
-from powerapi.message import EndMessage
-
-
-class SmartwattsDispatcherActor(DispatcherActor):
-    """
-    Dispatcher Actor that use formula pusher and power pusher
-    """
-    def receiveMsg_ChildActorExited(self, message: ChildActorExited, sender: ActorAddress):
-        DispatcherActor.receiveMsg_ChildActorExited(self, message, sender)
-        if self._exit_mode and not self.formula_pool:
-            for _, pusher in self.formula_values.pushers.items():
-                self.send(pusher, EndMessage(self.name))
