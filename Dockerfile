@@ -1,7 +1,5 @@
 FROM powerapi/powerapi:2.0.0
-USER root
-RUN apt update && apt upgrade -y
-RUN apt install -y libblas-dev liblapack-dev libatlas-base-dev gfortran
+
 USER powerapi
 COPY --chown=powerapi . /tmp/smartwatts
 RUN pip install --user --no-cache-dir "/tmp/smartwatts" && rm -r /tmp/smartwatts
