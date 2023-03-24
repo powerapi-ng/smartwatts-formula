@@ -27,69 +27,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# pylint: disable=redefined-outer-name,unused-argument,unused-import,no-self-use
+# pylint: disable=redefined-outer-name,unused-argument,unused-import
 import time
 from datetime import datetime
+from multiprocessing import active_children
 
 import pymongo
 import pytest
 
-from powerapi.test_utils.db.mongo import MONGO_URI, MONGO_DATABASE_NAME, MONGO_INPUT_COLLECTION_NAME, \
-    MONGO_OUTPUT_COLLECTION_NAME
+from tests.utils.db.mongo import MONGO_URI, MONGO_DATABASE_NAME, MONGO_INPUT_COLLECTION_NAME, \
+    MONGO_OUTPUT_COLLECTION_NAME, gen_base_db_test, clean_base_db_test
 
 from smartwatts.__main__ import run_smartwatts
 
 TICKS_NUMBER = 5
 REALTIME_TICKS_NUMBER = 2
 SENSOR_NAME = 'cpu'
-
-
-@pytest.fixture
-def formula_config():
-    """
-    Return a formula config
-    :return: The formula config
-    """
-    return {'verbose': 0,
-            'stream': False,
-            'input': {'puller_mongodb': {'type': 'mongodb',
-                                         'model': 'HWPCReport',
-                                         'uri': MONGO_URI,
-                                         'db': MONGO_DATABASE_NAME,
-                                         'collection': MONGO_INPUT_COLLECTION_NAME}},
-            'output': {'power_pusher': {'type': 'mongodb',
-                                        'model': 'PowerReport',
-                                        'uri': MONGO_URI,
-                                        'db': MONGO_DATABASE_NAME,
-                                        'collection': MONGO_OUTPUT_COLLECTION_NAME},
-                       'formula_pusher': {'type': 'mongodb',
-                                          'model': 'FormulaReport',
-                                          'uri': MONGO_URI,
-                                          'db': MONGO_DATABASE_NAME,
-                                          'collection': 'test_result_formula'}},
-            'disable-cpu-formula': False,
-            'disable-dram-formula': True,
-            'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
-            'cpu-tdp': 125,
-            'cpu-base-clock': 100,
-            'cpu-frequency-min': 4,
-            'cpu-frequency-base': 19,
-            'cpu-frequency-max': 42,
-            'cpu-error-threshold': 2.0,
-            'sensor-report-sampling-interval': 1000,
-            'learn-min-samples-required': 10,
-            'learn-history-window-size': 60,
-            'real-time-mode': False}
-
-
-@pytest.fixture
-def formula_config_real_time_enabled(formula_config):
-    """
-    Return a formula config with real time mode = True
-    :return: The formula config
-    """
-    formula_config['real-time-mode'] = True
-    return formula_config
 
 
 def check_db():
@@ -126,10 +79,76 @@ def check_db_real_time():
         assert c_output.count_documents(query) == 1
 
 
-class AbstractAcceptationTest():
+class AbstractAcceptationTest:
     """
-    Basic acceptation tests for Smartwatts Formula
+    Basic acceptation tests for SmartWatts Formula
     """
+
+    @pytest.fixture
+    def shutdown_system(self):
+        """
+        Shutdown the actor system, i.e., all actors are killed
+        """
+        yield None
+        active = active_children()
+        for child in active:
+            child.kill()
+
+    @pytest.fixture
+    def mongo_database(self, mongodb_content):
+        """
+        connect to a local mongo database (localhost:27017) and store data contained in the list influxdb_content
+        after test end, delete the data
+        """
+        gen_base_db_test(MONGO_URI, mongodb_content)
+        yield None
+        clean_base_db_test(MONGO_URI)
+
+    @pytest.fixture
+    def formula_config(self):
+        """
+        Return a formula config
+        :return: The formula config
+        """
+        return {'verbose': 0,
+                'stream': False,
+                'input': {'puller_mongodb': {'type': 'mongodb',
+                                             'model': 'HWPCReport',
+                                             'uri': MONGO_URI,
+                                             'db': MONGO_DATABASE_NAME,
+                                             'collection': MONGO_INPUT_COLLECTION_NAME}},
+                'output': {'power_pusher': {'type': 'mongodb',
+                                            'model': 'PowerReport',
+                                            'uri': MONGO_URI,
+                                            'db': MONGO_DATABASE_NAME,
+                                            'collection': MONGO_OUTPUT_COLLECTION_NAME},
+                           'formula_pusher': {'type': 'mongodb',
+                                              'model': 'FormulaReport',
+                                              'uri': MONGO_URI,
+                                              'db': MONGO_DATABASE_NAME,
+                                              'collection': 'test_result_formula'}},
+                'disable-cpu-formula': False,
+                'disable-dram-formula': True,
+                'cpu-rapl-ref-event': 'RAPL_ENERGY_PKG',
+                'cpu-tdp': 125,
+                'cpu-base-clock': 100,
+                'cpu-frequency-min': 4,
+                'cpu-frequency-base': 19,
+                'cpu-frequency-max': 42,
+                'cpu-error-threshold': 2.0,
+                'sensor-report-sampling-interval': 1000,
+                'learn-min-samples-required': 10,
+                'learn-history-window-size': 60,
+                'real-time-mode': False}
+
+    @pytest.fixture
+    def formula_config_real_time_enabled(self, formula_config):
+        """
+        Return a formula config with real time mode = True
+        :return: The formula config
+        """
+        formula_config['real-time-mode'] = True
+        return formula_config
 
     def test_normal_behaviour(self, mongo_database, formula_config, shutdown_system):
         """

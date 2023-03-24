@@ -1,21 +1,21 @@
-# Copyright (c) 2022, INRIA
-# Copyright (c) 2022, University of Lille
+# Copyright (c) 2021, INRIA
+# Copyright (c) 2021, University of Lille
 # All rights reserved.
-#
+
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#
+
 # * Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
-#
+
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-#
+
 # * Neither the name of the copyright holder nor the names of its
 #   contributors may be used to endorse or promote products derived from
 #   this software without specific prior written permission.
-#
+
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,50 +27,41 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# pylint: disable=redefined-outer-name,unused-argument,unused-import
-
-"""
-Run smartwatts on a mongodb database that contain 10 hwpc report per target :
-- all
-- mongodb
-- influxdb
-- sensor
-
-as the model can't fit with 10 report , it should only return power report for the entire system containing RAPL data
-
-We test if smartwatts return 5 powerReport for rapl target
-"""
-import time
-
-import pytest
-
-from smartwatts.__main__ import run_smartwatts
-from tests.utils.acceptation import check_db_real_time, AbstractAcceptationTest
-from tests.utils.reports import smartwatts_timeline
+import pymongo
 
 
-@pytest.fixture
-def mongodb_content(smartwatts_timeline):
+MONGO_URI = "mongodb://127.0.0.1:27017/"
+MONGO_INPUT_COLLECTION_NAME = 'test_input_smartwatts'
+MONGO_OUTPUT_COLLECTION_NAME = 'test_output_smartwatts'
+MONGO_DATABASE_NAME = 'MongoDB1'
+
+
+def gen_base_db_test(uri, content):
     """
-    Define the content of the input database
-    :param smartwatts_timeline: The content of the database
-    :return: The content of the database
+    Create the input database with the provided content. The output database is deleted
+    :param uri: The mongo connection URI
+    :param content: The database content
     """
-    return smartwatts_timeline
+    mongo = pymongo.MongoClient(uri)
+    db = mongo[MONGO_DATABASE_NAME]
+
+    # delete collection if it already exist
+    db[MONGO_INPUT_COLLECTION_NAME].drop()
+    db.create_collection(MONGO_INPUT_COLLECTION_NAME)
+    for item in content:
+        db[MONGO_INPUT_COLLECTION_NAME].insert_one(item)
+
+    # delete output collection
+    db[MONGO_OUTPUT_COLLECTION_NAME].drop()
+    mongo.close()
 
 
-class TestBasicSmartwattsFormula(AbstractAcceptationTest):
+def clean_base_db_test(uri):
     """
-    Execute basic acceptation test for SmartwattsFormula
+    drop test_input_smartwatts and test_output_smartwatts collections
     """
-    def test_normal_behaviour_real_time(self, mongo_database, formula_config_real_time_enabled, shutdown_system):
-        """
-        Test that the formula generate the expected Power reports when real time is used
-        :param mongo_database: The base for executing tests
-        :param shutdown_system: Stops the actor system once tests are ended
-        """
-        supervisor = run_smartwatts(formula_config_real_time_enabled)
-        time.sleep(30)
-
-        supervisor.join()
-        check_db_real_time()
+    mongo = pymongo.MongoClient(uri)
+    db = mongo[MONGO_DATABASE_NAME]
+    db[MONGO_INPUT_COLLECTION_NAME].drop()
+    db[MONGO_OUTPUT_COLLECTION_NAME].drop()
+    mongo.close()
