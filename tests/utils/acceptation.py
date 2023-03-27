@@ -55,10 +55,9 @@ def check_db():
 
     assert c_output.count_documents({}) == (c_input.count_documents({}) / 4) - TICKS_NUMBER
 
-    for report in c_input.find({'target': 'all'})[1:5]:
+    for report in c_input.find({'target': 'all'}):
         ts = datetime.strptime(report['timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
-        query = {'timestamp': ts, 'sensor': SENSOR_NAME,
-                 'target': 'rapl'}
+        query = {'timestamp': ts, 'sensor': SENSOR_NAME, 'target': 'rapl'}
         assert c_output.count_documents(query) == 1
 
 
@@ -72,10 +71,9 @@ def check_db_real_time():
 
     assert c_output.count_documents({}) == (c_input.count_documents({}) / 4) - REALTIME_TICKS_NUMBER
 
-    for report in c_input.find({'target': 'all'})[:5]:
+    for report in c_input.find({'target': 'all'}):
         ts = datetime.strptime(report['timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
-        query = {'timestamp': ts, 'sensor': SENSOR_NAME,
-                 'target': 'rapl'}
+        query = {'timestamp': ts, 'sensor': SENSOR_NAME, 'target': 'rapl'}
         assert c_output.count_documents(query) == 1
 
 
