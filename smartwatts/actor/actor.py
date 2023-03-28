@@ -26,78 +26,57 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import logging
-from enum import Enum
+import re
 from typing import Dict
-from collections import OrderedDict
 
-from powerapi.handler import StartHandler
-from powerapi.pusher import PusherActor
-
-from powerapi.formula import AbstractCpuDramFormula
+from powerapi.formula import FormulaActor, FormulaState
+from powerapi.handler import StartHandler, PoisonPillMessageHandler
 from powerapi.message import PoisonPillMessage, StartMessage
+from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
-from .smartwatts_handlers import ReportHandler, SmartWattsFormulaPoisonPillMessageHandler
+from smartwatts.handler.hwpc_report import HwPCReportHandler
+from .config import SmartWattsFormulaConfig
 
 
-class SmartWattsFormulaScope(Enum):
+class SmartWattsFormulaState(FormulaState):
     """
-    Enum used to set the scope of the SmartWatts formula.
-    """
-    CPU = "cpu"
-    DRAM = "dram"
-
-
-class SmartWattsFormulaConfig:
-    """
-    Global config of the SmartWatts formula.
+    State of the SmartWatts formula actor.
     """
 
-    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required,
-                 history_window_size, real_time_mode):
+    def __init__(self, actor, pushers, metadata, config):
         """
-        Initialize a new formula config object.
-        :param scope: Scope of the formula
-        :param reports_frequency: Frequency at which the reports (in milliseconds)
-        :param rapl_event: RAPL event to use as reference
-        :param error_threshold: Error threshold (in Watt)
-        :param cpu_topology: Topology of the CPU
-        :param min_samples_required: Minimum amount of samples required before trying to learn a power model
-        :param history_window_size: Size of the history window used to keep samples to learn from
+        Initialize a new formula state object.
+        :param actor: Actor of the formula
+        :param pushers: Dictionary of available pushers
+        :param config: Configuration of the formula
         """
-        self.scope = scope
-        self.reports_frequency = reports_frequency
-        self.rapl_event = rapl_event
-        self.error_threshold = error_threshold
-        self.cpu_topology = cpu_topology
-        self.min_samples_required = min_samples_required
-        self.history_window_size = history_window_size
-        self.real_time_mode = real_time_mode
+        FormulaState.__init__(self, actor, pushers, metadata)
+        self.config = config
+
+        m = re.search(r'^\(\'(.*)\', \'(.*)\', \'(.*)\'\)$', actor.name)
+        self.dispatcher = m.group(1)
+        self.sensor = m.group(2)
+        self.socket = m.group(3)
 
 
-class SmartWattsFormulaActor(AbstractCpuDramFormula):
+class SmartWattsFormulaActor(FormulaActor):
     """
     This actor handle the reports for the SmartWatts formula.
     """
 
-    def __init__(self, name: str, power_pushers: Dict[str, PusherActor], formula_pushers: Dict[str, PusherActor],
-                 socket: str, core: str, config: SmartWattsFormulaConfig, sensor: str, level_logger=logging.WARNING,
-                 timeout=None):
-        AbstractCpuDramFormula.__init__(self, name, power_pushers, socket, core, level_logger, timeout)
+    def __init__(self, name, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig, level_logger=logging.WARNING, timeout=None):
+        super().__init__(name, pushers, level_logger, timeout)
+        self.state = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
 
-        self.state.config = config
-        self.state.sensor = sensor
-        self.state.ticks = OrderedDict()
-        # self.formula = None
-        self.state.formula_pushers = formula_pushers
-        # self.real_time_mode = None
+    @staticmethod
+    def _extract_formula_metadata(formula_name):
+        return FormulaActor._extract_formula_metadata(formula_name)
 
     def setup(self):
-        """
-        Initialize Handler
-        """
-        AbstractCpuDramFormula.setup(self)
-        self.add_handler(PoisonPillMessage, SmartWattsFormulaPoisonPillMessageHandler(self.state))
-        self.add_handler(HWPCReport, ReportHandler(self.state))
+        super().setup()
         self.add_handler(StartMessage, StartHandler(self.state))
+        self.add_handler(PoisonPillMessage, PoisonPillMessageHandler(self.state))
+        self.add_handler(HWPCReport, HwPCReportHandler(self.state))
