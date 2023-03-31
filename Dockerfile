@@ -1,4 +1,4 @@
-FROM powerapi/powerapi:2.0.1
+FROM powerapi/powerapi:2.0.2
 
 USER powerapi
 COPY --chown=powerapi . /tmp/smartwatts
