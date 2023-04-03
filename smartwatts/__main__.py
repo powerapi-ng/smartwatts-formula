@@ -195,7 +195,9 @@ if __name__ == "__main__":
         logging.error('Invalid configuration')
         sys.exit(1)
 
-    logging.basicConfig(level=logging.DEBUG if args['verbose'] else logging.INFO)
+    logging_level = logging.DEBUG if args['verbose'] else logging.INFO
+    logging_format = '%(asctime)s - %(process)d - %(processName)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging_level, format=logging_format)
 
     run_smartwatts(args)
     sys.exit(0)
