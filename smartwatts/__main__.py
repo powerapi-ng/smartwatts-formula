@@ -107,7 +107,7 @@ def setup_cpu_formula_dispatcher(config, route_table, report_filter, cpu_topolog
     :param pushers: Reports pushers
     :return: Initialized CPU dispatcher actor
     """
-    def cpu_formula_factory(name: str, **kwargs):
+    def cpu_formula_factory(name: str, **_):
         formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.CPU)
         return SmartWattsFormulaActor(name, pushers, formula_config)
 
@@ -126,7 +126,7 @@ def setup_dram_formula_dispatcher(config, route_table, report_filter, cpu_topolo
     :param pushers: Reports pushers
     :return: Initialized DRAM dispatcher actor
     """
-    def dram_formula_factory(name: str, **kwargs):
+    def dram_formula_factory(name: str, **_):
         formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.DRAM)
         return SmartWattsFormulaActor(name, pushers, formula_config)
 
