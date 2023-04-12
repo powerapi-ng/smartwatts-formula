@@ -48,6 +48,7 @@ from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.cli import SmartWattsConfigValidator
 from smartwatts.model import CPUTopology
+from smartwatts.report import FormulaReport
 
 
 def generate_smartwatts_parser() -> CommonCLIParser:
@@ -149,7 +150,10 @@ def run_smartwatts(config) -> None:
 
     report_filter = Filter()
     pullers = PullerGenerator(report_filter).generate(config)
-    pushers = PusherGenerator().generate(config)
+
+    pusher_generator = PusherGenerator()
+    pusher_generator.add_report_class('FormulaReport', FormulaReport)
+    pushers = pusher_generator.generate(config)
 
     dispatchers = {}
 
