@@ -34,7 +34,7 @@ from collections import deque
 from sklearn.linear_model import ElasticNet
 
 
-class History:
+class ReportHistory:
     """
     This class stores the reports history to use when learning a new power model.
     """
@@ -79,7 +79,7 @@ class PowerModel:
         self.frequency = frequency
         self.model = ElasticNet()
         self.hash = 'uninitialized'
-        self.history = History(history_window_size)
+        self.history = ReportHistory(history_window_size)
         self.id = 0
 
     def learn_power_model(self, min_samples, min_intercept, max_intercept):
