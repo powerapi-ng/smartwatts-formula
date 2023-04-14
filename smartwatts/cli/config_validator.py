@@ -1,5 +1,5 @@
-# Copyright (c) 2023, INRIA
-# Copyright (c) 2023, University of Lille
+# Copyright (c) 2022, INRIA
+# Copyright (c) 2022, University of Lille
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,3 +26,23 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from typing import Dict
+
+from powerapi.cli import ConfigValidator
+
+
+class SmartWattsConfigValidator(ConfigValidator):
+    """
+    Class used that check the config extracted and verify it conforms to constraints
+    """
+
+    @staticmethod
+    def validate(config: Dict) -> bool:
+        if not ConfigValidator.validate(config):
+            return False
+
+        if config['disable-cpu-formula'] and config['disable-dram-formula']:
+            return False
+
+        return True

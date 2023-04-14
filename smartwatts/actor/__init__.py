@@ -27,50 +27,5 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# pylint: disable=redefined-outer-name,unused-argument,unused-import
-
-"""
-Run smartwatts on a mongodb database that contain 10 hwpc report per target :
-- all
-- mongodb
-- influxdb
-- sensor
-
-as the model can't fit with 10 report , it should only return power report for the entire system containing RAPL data
-
-We test if smartwatts return 5 powerReport for rapl target
-"""
-import time
-
-import pytest
-
-from smartwatts.__main__ import run_smartwatts
-from tests.utils.acceptation import check_db_real_time, AbstractAcceptationTest
-from tests.utils.reports import smartwatts_timeline
-
-
-@pytest.fixture
-def mongodb_content(smartwatts_timeline):
-    """
-    Define the content of the input database
-    :param smartwatts_timeline: The content of the database
-    :return: The content of the database
-    """
-    return smartwatts_timeline
-
-
-class TestBasicSmartwattsFormula(AbstractAcceptationTest):
-    """
-    Execute basic acceptation test for SmartwattsFormula
-    """
-    def test_normal_behaviour_real_time(self, mongo_database, formula_config_real_time_enabled, shutdown_system):
-        """
-        Test that the formula generate the expected Power reports when real time is used
-        :param mongo_database: The base for executing tests
-        :param shutdown_system: Stops the actor system once tests are ended
-        """
-        supervisor = run_smartwatts(formula_config_real_time_enabled)
-        time.sleep(30)
-
-        supervisor.join()
-        check_db_real_time()
+from .actor import SmartWattsFormulaActor, SmartWattsFormulaState
+from .config import SmartWattsFormulaConfig, SmartWattsFormulaScope

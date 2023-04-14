@@ -27,34 +27,39 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# pylint: disable=redefined-outer-name,unused-import
-"""
-Run smartwatts on a mongodb database that contain 10 hwpc report per target
-
-- all
-- mongodb
-- influxdb
-- sensor
-The first hwpc report contains mperf value equals to 0
-Test if the system don't crash after receiving the first report and deal with the other report
-"""
-import pytest
-
-from tests.utils.acceptation import AbstractAcceptationTest
-from tests.utils.reports import smartwatts_timeline_with_mperf_0, smartwatts_timeline
+from enum import Enum
 
 
-@pytest.fixture
-def mongodb_content(smartwatts_timeline_with_mperf_0):
+class SmartWattsFormulaScope(Enum):
     """
-    Define the content of the input database
-    :param smartwatts_timeline_with_mperf_0: The content of the database. One of the reports has mperf=0
-    :return: The content of the database
+    Enum used to set the scope of the SmartWatts formula.
     """
-    return smartwatts_timeline_with_mperf_0
+    CPU = "cpu"
+    DRAM = "dram"
 
 
-class TestSmartwattsFormulaWithMperf0(AbstractAcceptationTest):
+class SmartWattsFormulaConfig:
     """
-    Execute acceptation test for SmartwattsFormula by using MPERF = 0
+    Global config of the SmartWatts formula.
     """
+
+    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required,
+                 history_window_size, real_time_mode):
+        """
+        Initialize a new formula config object.
+        :param scope: Scope of the formula
+        :param reports_frequency: Frequency at which the reports (in milliseconds)
+        :param rapl_event: RAPL event to use as reference
+        :param error_threshold: Error threshold (in Watt)
+        :param cpu_topology: Topology of the CPU
+        :param min_samples_required: Minimum amount of samples required before trying to learn a power model
+        :param history_window_size: Size of the history window used to keep samples to learn from
+        """
+        self.scope = scope
+        self.reports_frequency = reports_frequency
+        self.rapl_event = rapl_event
+        self.error_threshold = error_threshold
+        self.cpu_topology = cpu_topology
+        self.min_samples_required = min_samples_required
+        self.history_window_size = history_window_size
+        self.real_time_mode = real_time_mode

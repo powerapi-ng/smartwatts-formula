@@ -30,29 +30,28 @@
 import logging
 import signal
 import sys
+from collections import OrderedDict
 from typing import Dict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.backend_supervisor import BackendSupervisor
-from powerapi.dispatcher import RouteTable
-
-from powerapi.cli import ConfigValidator
-from powerapi.cli.tools import store_true, CommonCLIParser
-from powerapi.cli.generator import ReportModifierGenerator, PullerGenerator, PusherGenerator
-from powerapi.exception import PowerAPIException
-from powerapi.report import HWPCReport, PowerReport
+from powerapi.cli.generator import PusherGenerator, PullerGenerator
+from powerapi.cli.parser import store_true
+from powerapi.cli.tools import CommonCLIParser
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
+from powerapi.dispatcher import DispatcherActor, RouteTable
+from powerapi.exception import PowerAPIException
 from powerapi.filter import Filter
-from powerapi.actor import InitializationException
+from powerapi.report import HWPCReport
 
 from smartwatts import __version__ as smartwatts_version
+from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaScope, SmartWattsFormulaConfig
+from smartwatts.cli import SmartWattsConfigValidator
+from smartwatts.model import CPUTopology
 from smartwatts.report import FormulaReport
-from smartwatts.smartwatts_dispatcher_actor import SmartWattsDispatcherActor
-from smartwatts.smartwatts_formula_actor import SmartWattsFormulaActor, SmartWattsFormulaScope, SmartWattsFormulaConfig
-from smartwatts.topology import CPUTopology
 
 
-def generate_smartwatts_parser():
+def generate_smartwatts_parser() -> CommonCLIParser:
     """
     Construct and returns the SmartWatts cli parameters parser.
     :return: SmartWatts cli parameters parser
@@ -60,250 +59,149 @@ def generate_smartwatts_parser():
     parser = CommonCLIParser()
 
     # Formula control parameters
-    parser.add_argument('disable-cpu-formula', help='Disable CPU formula', flag=True, type=bool, default=False,
-                        action=store_true)
-    parser.add_argument('disable-dram-formula', help='Disable DRAM formula', flag=True, type=bool, default=False,
-                        action=store_true)
+    parser.add_argument('disable-cpu-formula', help='Disable CPU formula', flag=True, type=bool, default=False, action=store_true)
+    parser.add_argument('disable-dram-formula', help='Disable DRAM formula', flag=True, type=bool, default=False, action=store_true)
 
     # Formula RAPL reference event
-    parser.add_argument('cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models',
-                        default='RAPL_ENERGY_PKG')
-    parser.add_argument('dram-rapl-ref-event', help='RAPL event used as reference for the DRAM power models',
-                        default='RAPL_ENERGY_DRAM')
+    parser.add_argument('cpu-rapl-ref-event', help='RAPL event used as reference for the CPU power models', default='RAPL_ENERGY_PKG')
+    parser.add_argument('dram-rapl-ref-event', help='RAPL event used as reference for the DRAM power models', default='RAPL_ENERGY_DRAM')
 
     # CPU topology information
-    parser.add_argument('cpu-tdp', help='CPU TDP (in Watts)', type=int, default=125)
+    parser.add_argument('cpu-tdp', help='CPU TDP (in Watt)', type=int, default=400)
     parser.add_argument('cpu-base-clock', help='CPU base clock (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-frequency-min', help='CPU minimal frequency (in MHz)', type=int, default=100)
-    parser.add_argument('cpu-frequency-base', help='CPU base frequency (in MHz)', type=int, default=2300)
-    parser.add_argument('cpu-frequency-max', help='CPU maximal frequency (In MHz, with Turbo-Boost)', type=int,
-                        default=4000)
+    parser.add_argument('cpu-base-freq', help='CPU base frequency (in MHz)', type=int, default=2100)
 
     # Formula error threshold
-    parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watts)', type=float,
-                        default=2.0)
-    parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watts)', type=float,
-                        default=2.0)
+    parser.add_argument('cpu-error-threshold', help='Error threshold for the CPU power models (in Watt)', type=float, default=2.0)
+    parser.add_argument('dram-error-threshold', help='Error threshold for the DRAM power models (in Watt)', type=float, default=2.0)
 
     # Sensor information
-    parser.add_argument('sensor-report-sampling-interval',
-                        help='The frequency with which measurements are made (in milliseconds)', type=int, default=1000)
+    parser.add_argument('sensor-reports-frequency', help='The frequency with which measurements are made (in milliseconds)', type=int, default=1000)
 
     # Learning parameters
-    parser.add_argument('learn-min-samples-required',
-                        help='Minimum amount of samples required before trying to learn a power model', type=int,
-                        default=10)
-    parser.add_argument('learn-history-window-size',
-                        help='Size of the history window used to keep samples to learn from', type=int, default=60)
-    parser.add_argument('real-time-mode', help='Pass the wait for reports from 4 ticks to 1', type=bool, default=False)
+    parser.add_argument('learn-min-samples-required', help='Minimum amount of samples required before trying to learn a power model', type=int, default=10)
+    parser.add_argument('learn-history-window-size', help='Size of the history window used to keep samples to learn from', type=int, default=60)
+
     return parser
 
 
-def filter_rule(_):
+def generate_formula_configuration(config: Dict, cpu_topology: CPUTopology, scope: SmartWattsFormulaScope) -> SmartWattsFormulaConfig:
     """
-    Rule of filter. Here none
+    Generate a SmartWatts actor configuration.
     """
-    return True
+    reports_freq = config['sensor-reports-frequency']
+    rapl_event = config[f'{scope.value}-rapl-ref-event']
+    error_threshold = config[f'{scope.value}-error-threshold']
+    min_samples = config['learn-min-samples-required']
+    history_window_size = config['learn-history-window-size']
+    real_time_mode = config['stream']
+    return SmartWattsFormulaConfig(scope, reports_freq, rapl_event, error_threshold, cpu_topology, min_samples, history_window_size, real_time_mode)
 
 
-def setup_formula_actor(be_supervisor: BackendSupervisor, global_configuration: Dict, route_table: RouteTable,
-                        report_filter: Filter, cpu_topology: CPUTopology, formula_pushers: Dict,
-                        power_pushers: Dict, rapl_event: str, error_threshold: int, dispatcher_name: str,
-                        device_id: str):
+def setup_cpu_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers) -> DispatcherActor:
     """
     Setup CPU formula actor.
-    :param be_supervisor: Actor supervisor
-    :param global_configuration: Global configuration
+    :param config: Global configuration
     :param route_table: Reports routing table
     :param report_filter: Reports filter
     :param cpu_topology: CPU topology information
-    :param power_pushers: Power Reports pushers
-    :param formula_pushers: Formula Reports pushers
-    :param rapl_event: RAPL event associated with the Dispatcher
-    :param error_threshold: Error threshold related to Formulas managed by the Dispatcher
-    :param dispatcher_name: Dispatcher Name
-    :param device_id: Id of the device related to the Dispatcher
+    :param pushers: Reports pushers
+    :return: Initialized CPU dispatcher actor
     """
-    formula_config = SmartWattsFormulaConfig(scope=SmartWattsFormulaScope.CPU,
-                                             reports_frequency=global_configuration['sensor-report-sampling-interval'],
-                                             rapl_event=rapl_event,
-                                             error_threshold=error_threshold,
-                                             cpu_topology=cpu_topology,
-                                             min_samples_required=global_configuration['learn-min-samples-required'],
-                                             history_window_size=global_configuration['learn-history-window-size'],
-                                             real_time_mode=global_configuration['real-time-mode'])
+    def cpu_formula_factory(name: str, **_):
+        formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.CPU)
+        return SmartWattsFormulaActor(name, pushers, formula_config)
 
-    dispatcher = SmartWattsDispatcherActor(name=dispatcher_name, formula_init_function=SmartWattsFormulaActor,
-                                           power_pushers=power_pushers, formula_pushers=formula_pushers,
-                                           route_table=route_table, device_id=device_id,
-                                           formula_config=formula_config, level_logger=logging.getLogger().level)
-
-    be_supervisor.launch_actor(dispatcher)
-
-    report_filter.filter(filter_rule, dispatcher)
+    cpu_dispatcher = DispatcherActor('cpu_dispatcher', cpu_formula_factory, pushers, route_table)
+    report_filter.filter(lambda msg: True, cpu_dispatcher)
+    return cpu_dispatcher
 
 
-def run_smartwatts(args) -> BackendSupervisor:
+def setup_dram_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers) -> DispatcherActor:
+    """
+    Setup DRAM formula actor.
+    :param config: Global configuration
+    :param route_table: Reports routing table
+    :param report_filter: Reports filter
+    :param cpu_topology: CPU topology information
+    :param pushers: Reports pushers
+    :return: Initialized DRAM dispatcher actor
+    """
+    def dram_formula_factory(name: str, **_):
+        formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.DRAM)
+        return SmartWattsFormulaActor(name, pushers, formula_config)
+
+    dram_dispatcher = DispatcherActor('dram_dispatcher', dram_formula_factory, pushers, route_table)
+    report_filter.filter(lambda msg: True, dram_dispatcher)
+    return dram_dispatcher
+
+
+def run_smartwatts(config) -> None:
     """
     Run PowerAPI with the SmartWatts formula.
-    :param args: CLI arguments namespace
-    :param logger: Logger to use for the actors
+    :param config: CLI arguments namespace
     """
-    global_configuration = args
-
-    logging.info('SmartWatts version %s using PowerAPI version %s', smartwatts_version, powerapi_version)
-
-    if global_configuration['disable-cpu-formula'] and global_configuration['disable-dram-formula']:
-        logging.error('You need to enable at least one formula')
-        return None
+    logging.info('SmartWatts version %s based on PowerAPI version %s', smartwatts_version, powerapi_version)
 
     route_table = RouteTable()
     route_table.dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
 
-    cpu_topology = CPUTopology(tdp=global_configuration['cpu-tdp'],
-                               freq_bclk=global_configuration['cpu-base-clock'],
-                               ratio_min=global_configuration['cpu-frequency-min'],
-                               ratio_base=global_configuration['cpu-frequency-base'],
-                               ratio_max=global_configuration['cpu-frequency-max'])
+    cpu_topology = CPUTopology(config['cpu-tdp'], config['cpu-base-clock'], 1, int(config['cpu-base-freq'] / config['cpu-base-clock']), 100)
 
     report_filter = Filter()
+    pullers = PullerGenerator(report_filter).generate(config)
 
-    report_modifier_list = ReportModifierGenerator().generate(global_configuration)
+    pusher_generator = PusherGenerator()
+    pusher_generator.add_report_class('FormulaReport', FormulaReport)
+    pushers = pusher_generator.generate(config)
 
-    be_supervisor = BackendSupervisor(global_configuration['stream'])  # Supervisor(args['verbose'], args['actor_system'])
+    dispatchers = {}
+
+    logging.info('CPU formula is %s', 'DISABLED' if config['disable-cpu-formula'] else 'ENABLED')
+    if not config['disable-cpu-formula']:
+        logging.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW', config['cpu-rapl-ref-event'], config['cpu-error-threshold'])
+        dispatchers['cpu'] = setup_cpu_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers)
+
+    logging.info('DRAM formula is %s', 'DISABLED' if config['disable-dram-formula'] else 'ENABLED')
+    if not config['disable-dram-formula']:
+        logging.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW', config['dram-rapl-ref-event'], config['dram-error-threshold'])
+        dispatchers['dram'] = setup_dram_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers)
+
+    actors = OrderedDict(**pushers, **dispatchers, **pullers)
+    supervisor = BackendSupervisor(config['stream'])
 
     def term_handler(_, __):
-        logging.info('SmartWatts is shutting down...')
-        be_supervisor.kill_actors()
+        supervisor.kill_actors()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, term_handler)
     signal.signal(signal.SIGINT, term_handler)
-    try:
-        logging.info('Starting SmartWatts actors...')
 
-        pusher_generator = PusherGenerator()
-        pusher_generator.add_report_class('FormulaReport', FormulaReport)
-        pushers_info = pusher_generator.generate(global_configuration)
-        formula_pushers = {}
-        power_pushers = {}
-
-        for pusher_name in pushers_info:
-            pusher = pushers_info[pusher_name]
-
-            if pusher.state.report_model == PowerReport:
-                be_supervisor.launch_actor(pusher)
-                power_pushers[pusher_name] = pusher
-            elif pusher.state.report_model == FormulaReport:
-                be_supervisor.launch_actor(pusher)
-                formula_pushers[pusher_name] = pusher
-            else:
-                raise InitializationException("Pusher parameters : Provide supported report type as model for pusher")
-
-        logging.info('CPU formula is %s' % ('DISABLED' if global_configuration['disable-cpu-formula'] else 'ENABLED'))
-        if not global_configuration['disable-cpu-formula']:
-            logging.info('CPU formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (
-                global_configuration['cpu-rapl-ref-event'], global_configuration['cpu-error-threshold']))
-            setup_formula_actor(be_supervisor=be_supervisor, global_configuration=global_configuration,
-                                route_table=route_table, report_filter=report_filter, cpu_topology=cpu_topology,
-                                formula_pushers=formula_pushers, power_pushers=power_pushers,
-                                device_id='cpu', rapl_event=global_configuration['cpu-rapl-ref-event'],
-                                error_threshold=global_configuration['cpu-error-threshold'],
-                                dispatcher_name='cpu_dispatcher')
-
-            logging.info(
-                'DRAM formula is %s' % ('DISABLED' if global_configuration['disable-dram-formula'] else 'ENABLED'))
-        if not global_configuration['disable-dram-formula']:
-            logging.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW' % (
-                global_configuration['dram-rapl-ref-event'], global_configuration['dram-error-threshold']))
-            setup_formula_actor(be_supervisor=be_supervisor, global_configuration=global_configuration,
-                                route_table=route_table, report_filter=report_filter, cpu_topology=cpu_topology,
-                                formula_pushers=formula_pushers, power_pushers=power_pushers,
-                                device_id='dram', rapl_event=global_configuration['dram-rapl-ref-event'],
-                                error_threshold=global_configuration['dram-error-threshold'],
-                                dispatcher_name='dram_dispatcher')
-
-        pullers_info = PullerGenerator(report_filter=report_filter, report_modifier_list=report_modifier_list,
-                                       ).generate(global_configuration)
-        for puller_name in pullers_info:
-            puller = pullers_info[puller_name]
-            be_supervisor.launch_actor(puller)
-    except InitializationException as exn:
-        logging.error('Actor initialization error: ' + exn.msg)
-        be_supervisor.kill_actors()
-        sys.exit(-1)
-    except PowerAPIException as exp:
-        logging.error("PowerException error: %s", exp)
-        be_supervisor.kill_actors()
-        sys.exit(-1)
+    for _, actor in actors.items():
+        try:
+            logging.debug('Initializing actor %s...', actor.name)
+            supervisor.launch_actor(actor)
+        except PowerAPIException:
+            logging.error('Failed to initialize actor %s', actor.name)
+            supervisor.kill_actors()
+            sys.exit(1)
 
     logging.info('SmartWatts is now running...')
-    return be_supervisor
-
-
-class SmartWattsConfigValidator(ConfigValidator):
-    """
-    Class used that check the config extracted and verify it conforms to constraints
-    """
-
-    @staticmethod
-    def validate(config: Dict):
-        if not ConfigValidator.validate(config):
-            return False
-
-        if 'disable-cpu-formula' not in config:
-            config['disable-cpu-formula'] = False
-        if 'disable-dram-formula' not in config:
-            config['disable-dram-formula'] = False
-        if 'cpu-rapl-ref-event' not in config:
-            config['cpu-rapl-ref-event'] = 'RAPL_ENERGY_PKG'
-        if 'dram-rapl-ref-event' not in config:
-            config['dram-rapl-ref-event'] = 'RAPL_ENERGY_DRAM'
-        if 'cpu-tdp' not in config:
-            config['cpu-tdp'] = 125
-        if 'cpu-base-clock' not in config:
-            config['cpu-base-clock'] = 100
-        if 'sensor-report-sampling-interval' not in config:
-            config['sensor-report-sampling-interval'] = 1000
-        if 'learn-min-samples-required' not in config:
-            config['learn-min-samples-required'] = 10
-        if 'learn-history-window-size' not in config:
-            config['learn-history-window-size'] = 60
-        if 'real-time-mode' not in config:
-            config['real-time-mode'] = False
-
-        # Model use frequency in 100MHz
-        if 'cpu-frequency-base' in config:
-            config['cpu-frequency-base'] = int(config['cpu-frequency-base'] / 100)
-        if 'cpu-frequency-min' in config:
-            config['cpu-frequency-min'] = int(config['cpu-frequency-min'] / 100)
-        if 'cpu-frequency-max' in config:
-            config['cpu-frequency-max'] = int(config['cpu-frequency-max'] / 100)
-
-        return True
-
-
-def get_config():
-    """
-    Get he config from the cli args
-    """
-    parser = generate_smartwatts_parser()
-    return parser.parse()
+    supervisor.join()
+    logging.info('SmartWatts is shutting down...')
 
 
 if __name__ == "__main__":
+    args_parser = generate_smartwatts_parser()
+    args = args_parser.parse()
 
-    conf = get_config()
-    if not SmartWattsConfigValidator.validate(conf):
-        sys.exit(-1)
-    logging.basicConfig(level=logging.DEBUG if conf['verbose'] else logging.INFO)
-    logging.captureWarnings(True)
+    if not SmartWattsConfigValidator().validate(args):
+        logging.error('Invalid configuration')
+        sys.exit(1)
 
-    logging.debug(str(conf))
-    supervisor = run_smartwatts(conf)
+    logging_level = logging.DEBUG if args['verbose'] else logging.INFO
+    logging_format = '%(asctime)s - %(process)d - %(processName)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging_level, format=logging_format)
 
-    while supervisor.are_all_actors_alive():
-        pass
-
-    supervisor.join()
+    run_smartwatts(args)
     sys.exit(0)
