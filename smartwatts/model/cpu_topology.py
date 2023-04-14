@@ -27,12 +27,15 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import List
+
+
 class CPUTopology:
     """
     This class stores the necessary information about the CPU topology.
     """
 
-    def __init__(self, tdp, freq_bclk, ratio_min, ratio_base, ratio_max):
+    def __init__(self, tdp: int, freq_bclk: float, ratio_min: int, ratio_base: int, ratio_max: int):
         """
         Create a new CPU topology object.
         :param tdp: TDP of the CPU in Watt
@@ -47,30 +50,30 @@ class CPUTopology:
         self.ratio_base = ratio_base
         self.ratio_max = ratio_max
 
-    def get_min_frequency(self):
+    def get_min_frequency(self) -> float:
         """
         Compute and return the CPU max efficiency frequency.
         :return: The CPU max efficiency frequency in MHz
         """
         return self.freq_bclk * self.ratio_min
 
-    def get_base_frequency(self):
+    def get_base_frequency(self) -> float:
         """
         Compute and return the CPU base frequency.
         :return: The CPU base frequency in MHz
         """
         return self.freq_bclk * self.ratio_base
 
-    def get_max_frequency(self):
+    def get_max_frequency(self) -> float:
         """
         Compute and return the CPU maximum frequency. (Turbo-Boost included)
         :return: The CPU maximum frequency in MHz
         """
         return self.freq_bclk * self.ratio_max
 
-    def get_supported_frequencies(self):
+    def get_supported_frequencies(self) -> List[float]:
         """
         Compute the supported frequencies for this CPU.
         :return: A list of supported frequencies in MHz
         """
-        return list(range(self.get_min_frequency(), self.get_max_frequency() + 1, self.freq_bclk))
+        return [ratio * self.freq_bclk for ratio in range(self.ratio_min, self.ratio_max + 1)]
