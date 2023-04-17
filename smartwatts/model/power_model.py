@@ -27,9 +27,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from collections import deque
 from hashlib import sha1
 from pickle import dumps
-from collections import deque
+from typing import Dict, List
 
 from sklearn.linear_model import ElasticNet
 
@@ -39,7 +40,7 @@ class ReportHistory:
     This class stores the reports history to use when learning a new power model.
     """
 
-    def __init__(self, max_length):
+    def __init__(self, max_length: int):
         """
         Initialize a new reports history container.
         :param max_length: Maximum amount of samples to keep before overriding the oldest sample at insertion
@@ -48,14 +49,14 @@ class ReportHistory:
         self.X = deque(maxlen=max_length)
         self.y = deque(maxlen=max_length)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Compute the length of the history.
         :return: Length of the history
         """
         return len(self.X)
 
-    def store_report(self, power_reference, events_value):
+    def store_report(self, power_reference: float, events_value: List[float]) -> None:
         """
         Append a report to the report's history.
         :param events_value: List of raw events value
@@ -70,7 +71,7 @@ class PowerModel:
     This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
-    def __init__(self, frequency, history_window_size):
+    def __init__(self, frequency: float, history_window_size: int):
         """
         Initialize a new power model.
         :param frequency: Frequency of the power model
@@ -82,7 +83,7 @@ class PowerModel:
         self.history = ReportHistory(history_window_size)
         self.id = 0
 
-    def learn_power_model(self, min_samples, min_intercept, max_intercept):
+    def learn_power_model(self, min_samples: int, min_intercept: float, max_intercept: float) -> None:
         """
         Learn a new power model using the stored reports and update the formula id/hash.
         :param min_samples: Minimum amount of samples required to learn the power model
@@ -105,7 +106,7 @@ class PowerModel:
         self.id += 1
 
     @staticmethod
-    def _extract_events_value(events):
+    def _extract_events_value(events: Dict[str, float]) -> List[float]:
         """
         Creates and return a list of events value from the events group.
         :param events: Events group
@@ -113,7 +114,7 @@ class PowerModel:
         """
         return [value for _, value in sorted(events.items())]
 
-    def store_report_in_history(self, power_reference, events):
+    def store_report_in_history(self, power_reference: float, events: Dict[str, float]) -> None:
         """
         Store the events group into the System reports list and learn a new power model.
         :param power_reference: Power reference (in Watt)
@@ -121,7 +122,7 @@ class PowerModel:
         """
         self.history.store_report(power_reference, self._extract_events_value(events))
 
-    def compute_power_estimation(self, events):
+    def compute_power_estimation(self, events: Dict[str, float]) -> float:
         """
         Compute a power estimation from the events value using the power model.
         :param events: Events value
@@ -130,7 +131,7 @@ class PowerModel:
         """
         return self.model.predict([self._extract_events_value(events)])[0]
 
-    def cap_power_estimation(self, raw_target_power, raw_global_power):
+    def cap_power_estimation(self, raw_target_power: float, raw_global_power: float) -> (float, float):
         """
         Cap target's power estimation to the global power estimation.
         :param raw_target_power: Target power estimation from the power model (in Watt)
@@ -144,7 +145,7 @@ class PowerModel:
         power = target_power if target_power > 0.0 else 0.0
         return power, ratio
 
-    def apply_intercept_share(self, target_power, target_ratio):
+    def apply_intercept_share(self, target_power: float, target_ratio: float) -> float:
         """
         Apply the target's share of intercept from its ratio from the global power consumption.
         :param target_power: Target power estimation (in Watt)
