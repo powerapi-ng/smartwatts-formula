@@ -159,10 +159,8 @@ class HwPCReportHandler(Handler):
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
-            target_core = self._gen_core_events_group(target_report)
-            raw_target_power = model.compute_power_estimation(target_core)
+            raw_target_power = model.compute_power_estimation(self._gen_core_events_group(target_report))
             target_power, target_ratio = model.cap_power_estimation(raw_target_power, raw_global_power)
-            target_power = model.apply_intercept_share(target_power, target_ratio)
             power_reports.append(
                 self._gen_power_report(
                     timestamp,

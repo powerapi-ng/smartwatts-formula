@@ -141,16 +141,10 @@ class PowerModel:
         target_power = raw_target_power - self.model.intercept_
         global_power = raw_global_power - self.model.intercept_
 
-        ratio = target_power / global_power if global_power > 0.0 and target_power > 0.0 else 0.0
-        power = target_power if target_power > 0.0 else 0.0
-        return power, ratio
+        if global_power <= 0.0 or target_power <= 0.0:
+            return 0.0, 0.0
 
-    def apply_intercept_share(self, target_power: float, target_ratio: float) -> float:
-        """
-        Apply the target's share of intercept from its ratio from the global power consumption.
-        :param target_power: Target power estimation (in Watt)
-        :param target_ratio: Target ratio over the global power consumption
-        :return: Target power estimation including intercept (in Watt) and ratio over global power consumption
-        """
-        intercept = target_ratio * self.model.intercept_
-        return target_power + intercept
+        target_ratio = target_power / global_power
+        target_intercept_share = target_ratio * self.model.intercept_
+
+        return target_power + target_intercept_share, target_ratio
