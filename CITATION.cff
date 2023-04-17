@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: "SmartWatts"
+url: "https://github.com/powerapi-ng/smartwatts-formula"
+license: BSD-3-Clause
+message: "If you use this software, please cite it using the metadata from this file."
+authors:
+  - family-names: "Fieni"
+    given-names: "Guillaume"
+    orcid: "https://orcid.org/0000-0002-0165-6824"
+preferred-citation:
+    type: conference-paper
+    title: "SmartWatts: Self-Calibrating Software-Defined Power Meter for Containers"
+    authors:
+      - family-names: "Fieni"
+        given-names: "Guillaume"
+        orcid: "https://orcid.org/0000-0002-0165-6824"
+      - family-names: "Rouvoy"
+        given-names: "Romain"
+        orcid: "https://orcid.org/0000-0003-1771-8791"
+      - family-names: "Seinturier"
+        given-names: "Lionel"
+        orcid: "https://orcid.org/0000-0003-0006-6088"
+    collection-title: "2020 20th IEEE/ACM International Symposium on Cluster, Cloud and Internet Computing (CCGRID)"
+    collection-type: proceedings
+    doi: "10.1109/CCGrid49817.2020.00-45"
+    year: 2020
+    start: 479
+    end: 488
