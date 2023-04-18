@@ -37,3 +37,7 @@ jobs:
     - name: Static code analysis with pylint
       run: |
         pylint smartwatts/ tests/
+
+    - name: Test with pytest
+      run: |
+        pytest --cov=smartwatts --cov-report=term --cov-report=xml tests/unit
