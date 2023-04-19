@@ -30,13 +30,6 @@
 from smartwatts.model import PowerModel
 
 
-def test_extract_report_events_value():
-    """
-    Test the static method extract_events_value returns the sorted list of events value.
-    """
-    assert PowerModel._extract_events_value({'B': 2.0, 'D': 4.0, 'C': 3, 'A': 1}) == [1, 2.0, 3, 4.0]
-
-
 def test_store_power_reports_in_history():
     """
     Test that the power report is correctly stored in the reports history of the model.
