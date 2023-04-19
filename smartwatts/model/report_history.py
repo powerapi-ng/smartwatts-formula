@@ -1,5 +1,5 @@
-# Copyright (c) 2022, INRIA
-# Copyright (c) 2022, University of Lille
+# Copyright (c) 2023, INRIA
+# Copyright (c) 2023, University of Lille
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,36 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .cpu_topology import CPUTopology
-from .report_history import ReportHistory
-from .power_model import PowerModel
+from collections import deque
+from typing import List
+
+
+class ReportHistory:
+    """
+    This class stores the reports history to use when learning a new power model.
+    """
+
+    def __init__(self, max_length: int):
+        """
+        Initialize a new reports history container.
+        :param max_length: Maximum amount of samples to keep before overriding the oldest sample at insertion
+        """
+        self.max_length = max_length
+        self.X = deque(maxlen=max_length)
+        self.y = deque(maxlen=max_length)
+
+    def __len__(self) -> int:
+        """
+        Compute the length of the history.
+        :return: Length of the history
+        """
+        return len(self.X)
+
+    def store_report(self, power_reference: float, events_value: List[float]) -> None:
+        """
+        Append a report to the report's history.
+        :param events_value: List of raw events value
+        :param power_reference: Power reference corresponding to the events value
+        """
+        self.X.append(events_value)
+        self.y.append(power_reference)
