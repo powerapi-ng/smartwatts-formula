@@ -53,7 +53,7 @@ class FormulaReport(Report):
         self.metadata = metadata
 
     def __repr__(self) -> str:
-        return 'FormulaReport(%s, %s, %s, %s)' % (self.timestamp, self.sensor, self.target, self.metadata)
+        return f'FormulaReport({self.timestamp}, {self.sensor}, {self.target}, {self.metadata})'
 
     @staticmethod
     def from_json(data: Dict) -> FormulaReport:
