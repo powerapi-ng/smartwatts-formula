@@ -88,14 +88,14 @@ class HwPCReportHandler(Handler):
         """
         return self.models[self._get_frequency_layer(self.compute_pkg_frequency(system_core))]
 
-    def handle(self, message: HWPCReport):
+    def handle(self, msg: HWPCReport):
 
         """
          Process a HWPC report and send the result(s) to a pusher actor.
-         :param message: Received message
+         :param msg: Received message
         """
-        logging.debug('received message: %s', message)
-        self.ticks.setdefault(message.timestamp, {}).update({message.target: message})
+        logging.debug('received message: %s', msg)
+        self.ticks.setdefault(msg.timestamp, {}).update({msg.target: msg})
 
         # Start to process the oldest tick only after receiving at least 5 ticks.
         # We wait before processing the ticks in order to mitigate the possible delay between the sensor/database.
