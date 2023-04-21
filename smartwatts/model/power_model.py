@@ -27,6 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import warnings
 from hashlib import sha1
 from pickle import dumps
 from typing import Dict, List
@@ -65,7 +66,9 @@ class PowerModel:
 
         fit_intercept = len(self.history) == self.history.max_length
         model = ElasticNet(fit_intercept=fit_intercept, positive=True)
-        model.fit(self.history.X, self.history.y)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model.fit(self.history.X, self.history.y)
 
         # Discard the new model when the intercept is not in specified range
         if not min_intercept <= model.intercept_ < max_intercept:
