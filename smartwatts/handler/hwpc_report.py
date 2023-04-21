@@ -46,7 +46,7 @@ class HwPCReportHandler(Handler):
     def __init__(self, state):
         Handler.__init__(self, state)
         self.models = self._gen_models_dict()
-        self.ticks = {}
+        self.ticks = OrderedDict()
 
     def _gen_models_dict(self):
         """
@@ -114,7 +114,7 @@ class HwPCReportHandler(Handler):
         Process the oldest tick stored in the stack and generate power reports for the running target(s).
         :return: Power reports of the running target(s)
         """
-        timestamp, hwpc_reports = self.ticks.popitem()
+        timestamp, hwpc_reports = self.ticks.popitem(last=False)
 
         # reports of the current tick
         power_reports = []
