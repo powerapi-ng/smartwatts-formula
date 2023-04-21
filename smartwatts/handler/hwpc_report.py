@@ -27,6 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import itertools
 import logging
 from collections import OrderedDict, defaultdict
 from math import ldexp, fabs
@@ -100,14 +101,11 @@ class HwPCReportHandler(Handler):
         # We wait before processing the ticks in order to mitigate the possible delay between the sensor/database.
         if len(self.ticks) > 5:
             power_reports, formula_reports = self._process_oldest_tick()
-            for report in power_reports:
+            for report in itertools.chain(power_reports, formula_reports):
                 for name, pusher in self.state.pushers.items():
-                    pusher.send_data(report)
-                    logging.debug('send power report: %s to %s', report, name)
-            for report in formula_reports:
-                for name, pusher in self.state.formula_pushers.items():
-                    pusher.send_data(report)
-                    logging.debug('send formula report: %s to %s', report, name)
+                    if isinstance(report, pusher.state.report_model):
+                        pusher.send_data(report)
+                        logging.debug('sent report: %s to %s', report, name)
 
     def _process_oldest_tick(self):
         """
