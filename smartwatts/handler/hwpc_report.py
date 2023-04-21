@@ -32,11 +32,10 @@ from collections import OrderedDict, defaultdict
 from math import ldexp, fabs
 
 from powerapi.handler import Handler
-from powerapi.report import PowerReport, HWPCReport
+from powerapi.report import PowerReport, HWPCReport, FormulaReport
 from sklearn.exceptions import NotFittedError
 
 from smartwatts.model.power_model import PowerModel
-from smartwatts.report import FormulaReport
 
 
 class HwPCReportHandler(Handler):
