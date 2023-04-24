@@ -37,7 +37,7 @@ from powerapi.message import PoisonPillMessage, StartMessage
 from powerapi.pusher import PusherActor
 from powerapi.report import HWPCReport
 
-from smartwatts.handler.hwpc_report import HwPCReportHandler
+from smartwatts.handler import HwPCReportHandler
 from .config import SmartWattsFormulaConfig
 
 

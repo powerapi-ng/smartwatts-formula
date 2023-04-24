@@ -28,3 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .config_validator import SmartWattsConfigValidator
+
+__all__ = [
+    'SmartWattsConfigValidator'
+]
