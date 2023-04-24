@@ -40,7 +40,7 @@ test = [
 ]
 
 lint = [
-    "flake8 >= 3.9.2",
+    "ruff >= 0.0.262",
     "pylint >= 2.16.0"
 ]
 
@@ -54,3 +54,20 @@ repository = "https://github.com/powerapi-ng/smartwatts-formula"
 
 [tool.setuptools.dynamic]
 version = {attr = "smartwatts.__version__"}
+
+[tool.ruff]
+target-version = "py38"  # should match minimal python version of PowerAPI
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "B",  # flake8-bugbear
+    "G",  # flake8-logging-format
+    "PT", # flake8-pytest-style
+    "UP", # pyupgrade
+    "ERA", # eradicate
+    "RUF", # ruff
+]
+ignore = [
+    "E501",  # line too long
+]
