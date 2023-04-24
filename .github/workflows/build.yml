@@ -30,9 +30,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[devel]"
 
-    - name: Lint with flake8
+    - name: Lint with Ruff
       run: |
-        flake8 --count --show-source --statistics smartwatts/ tests/
+        ruff check smartwatts/ tests/
 
     - name: Static code analysis with pylint
       run: |
