@@ -32,11 +32,11 @@ jobs:
 
     - name: Lint with Ruff
       run: |
-        ruff check smartwatts/ tests/
+        ruff check src/ tests/
 
     - name: Static code analysis with pylint
       run: |
-        pylint smartwatts/ tests/
+        pylint src/ tests/
 
     - name: Test with pytest
       run: |
