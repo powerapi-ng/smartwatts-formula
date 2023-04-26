@@ -47,6 +47,7 @@ from powerapi.report import HWPCReport
 from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.cli import SmartWattsConfigValidator
+from smartwatts.exception import InvalidConfigurationParameterException
 from smartwatts.model import CPUTopology
 
 
@@ -192,8 +193,10 @@ if __name__ == "__main__":
     args_parser = generate_smartwatts_parser()
     args = args_parser.parse()
 
-    if not SmartWattsConfigValidator().validate(args):
-        logging.error('Invalid configuration')
+    try:
+        SmartWattsConfigValidator().validate(args)
+    except InvalidConfigurationParameterException as exn:
+        logging.error('Invalid configuration: %s', exn)
         sys.exit(1)
 
     LOGGING_LEVEL = logging.DEBUG if args['verbose'] else logging.INFO

@@ -31,6 +31,8 @@ from typing import Dict
 
 from powerapi.cli import ConfigValidator
 
+from smartwatts.exception import InvalidConfigurationParameterException
+
 
 class SmartWattsConfigValidator(ConfigValidator):
     """
@@ -40,9 +42,21 @@ class SmartWattsConfigValidator(ConfigValidator):
     @staticmethod
     def validate(config: Dict) -> bool:
         if not ConfigValidator.validate(config):
-            return False
+            raise InvalidConfigurationParameterException('Invalid PowerAPI parameter')
 
         if config['disable-cpu-formula'] and config['disable-dram-formula']:
-            return False
+            raise InvalidConfigurationParameterException('At least one of the two formula scope must be enabled')
+
+        if config['cpu-tdp'] < 0 or config['cpu-base-clock'] < 0 or config['cpu-base-freq'] < 0:
+            raise InvalidConfigurationParameterException('CPU topology parameters (tdp/frequencies) must be positive')
+
+        if config['cpu-error-threshold'] < 0 or config['dram-error-threshold'] < 0:
+            raise InvalidConfigurationParameterException('CPU/DRAM error threshold must be positive')
+
+        if config['sensor-reports-frequency'] < 0:
+            raise InvalidConfigurationParameterException('Sensor reports frequency must be positive')
+
+        if config['learn-min-samples-required'] < 0 or config['learn-history-window-size'] < 0:
+            raise InvalidConfigurationParameterException('Report history parameters must be positive')
 
         return True
