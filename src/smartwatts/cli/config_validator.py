@@ -31,7 +31,7 @@ from typing import Dict
 
 from powerapi.cli import ConfigValidator
 
-from smartwatts.exception import InvalidConfigurationParameterException
+from smartwatts.exceptions import InvalidConfigurationParameterException
 
 
 class SmartWattsConfigValidator(ConfigValidator):

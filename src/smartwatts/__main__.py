@@ -47,7 +47,7 @@ from powerapi.report import HWPCReport
 from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import SmartWattsFormulaActor, SmartWattsFormulaScope, SmartWattsFormulaConfig
 from smartwatts.cli import SmartWattsConfigValidator
-from smartwatts.exception import InvalidConfigurationParameterException
+from smartwatts.exceptions import InvalidConfigurationParameterException
 from smartwatts.model import CPUTopology
 
 
