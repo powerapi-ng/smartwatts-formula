@@ -29,7 +29,7 @@ authors = [
 ]
 
 dependencies = [
-    "powerapi[everything] == 2.0.3",
+    "powerapi[everything] == 2.0.4",
     "scikit-learn >= 0.20.2",
 ]
 
