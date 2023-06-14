@@ -27,8 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Dict
-
 from powerapi.cli import ConfigValidator
 
 from smartwatts.exceptions import InvalidConfigurationParameterException
@@ -40,9 +38,9 @@ class SmartWattsConfigValidator(ConfigValidator):
     """
 
     @staticmethod
-    def validate(config: Dict) -> bool:
-        if not ConfigValidator.validate(config):
-            raise InvalidConfigurationParameterException('Invalid PowerAPI parameter')
+    def validate(config: dict):
+
+        ConfigValidator.validate(config)
 
         if config['disable-cpu-formula'] and config['disable-dram-formula']:
             raise InvalidConfigurationParameterException('At least one of the two formula scope must be enabled')
@@ -58,5 +56,3 @@ class SmartWattsConfigValidator(ConfigValidator):
 
         if config['learn-min-samples-required'] < 0 or config['learn-history-window-size'] < 0:
             raise InvalidConfigurationParameterException('Report history parameters must be positive')
-
-        return True
