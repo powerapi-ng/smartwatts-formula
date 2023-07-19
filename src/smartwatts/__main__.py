@@ -40,8 +40,7 @@ from powerapi.cli.config_parser import store_true
 from powerapi.cli.generator import PusherGenerator, PullerGenerator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
-from powerapi.exception import PowerAPIException, MissingArgumentException, NotAllowedArgumentValueException, \
-    FileDoesNotExistException
+from powerapi.exception import PowerAPIException, MissingArgumentException, NotAllowedArgumentValueException, FileDoesNotExistException
 from powerapi.filter import Filter
 from powerapi.report import HWPCReport
 
@@ -57,52 +56,33 @@ def generate_smartwatts_parser() -> CommonCLIParsingManager:
     Construct and returns the SmartWatts cli parameters parser.
     :return: SmartWatts cli parameters parser
     """
-    parser_manager = CommonCLIParsingManager()
+    pm = CommonCLIParsingManager()
 
     # Formula control parameters
-    parser_manager.add_argument_to_cli_parser('disable-cpu-formula', help_text='Disable CPU formula', is_flag=True,
-                                              argument_type=bool, default_value=False, action=store_true)
-    parser_manager.add_argument_to_cli_parser('disable-dram-formula', help_text='Disable DRAM formula', is_flag=True,
-                                              argument_type=bool, default_value=False, action=store_true)
+    pm.add_argument('disable-cpu-formula', help_text='Disable CPU formula', is_flag=True, argument_type=bool, default_value=False, action=store_true)
+    pm.add_argument('disable-dram-formula', help_text='Disable DRAM formula', is_flag=True, argument_type=bool, default_value=False, action=store_true)
 
     # Formula RAPL reference event
-    parser_manager.add_argument_to_cli_parser('cpu-rapl-ref-event',
-                                              help_text='RAPL event used as reference for the CPU power models',
-                                              default_value='RAPL_ENERGY_PKG')
-    parser_manager.add_argument_to_cli_parser('dram-rapl-ref-event',
-                                              help_text='RAPL event used as reference for the DRAM power models',
-                                              default_value='RAPL_ENERGY_DRAM')
+    pm.add_argument('cpu-rapl-ref-event', help_text='RAPL event used as reference for the CPU power models', default_value='RAPL_ENERGY_PKG')
+    pm.add_argument('dram-rapl-ref-event', help_text='RAPL event used as reference for the DRAM power models', default_value='RAPL_ENERGY_DRAM')
 
     # CPU topology information
-    parser_manager.add_argument_to_cli_parser('cpu-tdp', help_text='CPU TDP (in Watt)', argument_type=int,
-                                              default_value=400)
-    parser_manager.add_argument_to_cli_parser('cpu-base-clock', help_text='CPU base clock (in MHz)', argument_type=int,
-                                              default_value=100)
-    parser_manager.add_argument_to_cli_parser('cpu-base-freq', help_text='CPU base frequency (in MHz)',
-                                              argument_type=int, default_value=2100)
+    pm.add_argument('cpu-tdp', help_text='CPU TDP (in Watt)', argument_type=int, default_value=400)
+    pm.add_argument('cpu-base-clock', help_text='CPU base clock (in MHz)', argument_type=int, default_value=100)
+    pm.add_argument('cpu-base-freq', help_text='CPU base frequency (in MHz)', argument_type=int, default_value=2100)
 
     # Formula error threshold
-    parser_manager.add_argument_to_cli_parser('cpu-error-threshold',
-                                              help_text='Error threshold for the CPU power models (in Watt)',
-                                              argument_type=float, default_value=2.0)
-    parser_manager.add_argument_to_cli_parser('dram-error-threshold',
-                                              help_text='Error threshold for the DRAM power models (in Watt)',
-                                              argument_type=float, default_value=2.0)
+    pm.add_argument('cpu-error-threshold', help_text='Error threshold for the CPU power models (in Watt)', argument_type=float, default_value=2.0)
+    pm.add_argument('dram-error-threshold', help_text='Error threshold for the DRAM power models (in Watt)', argument_type=float, default_value=2.0)
 
     # Sensor information
-    parser_manager.add_argument_to_cli_parser('sensor-reports-frequency',
-                                              help_text='The frequency with which measurements are made (in milliseconds)',
-                                              argument_type=int, default_value=1000)
+    pm.add_argument('sensor-reports-frequency', help_text='The frequency with which measurements are made (in milliseconds)', argument_type=int, default_value=1000)
 
     # Learning parameters
-    parser_manager.add_argument_to_cli_parser('learn-min-samples-required',
-                                              help_text='Minimum amount of samples required before trying to learn a power model',
-                                              argument_type=int, default_value=10)
-    parser_manager.add_argument_to_cli_parser('learn-history-window-size',
-                                              help_text='Size of the history window used to keep samples to learn from',
-                                              argument_type=int, default_value=60)
+    pm.add_argument('learn-min-samples-required', help_text='Minimum amount of samples required before trying to learn a power model', argument_type=int, default_value=10)
+    pm.add_argument('learn-history-window-size', help_text='Size of the history window used to keep samples to learn from', argument_type=int, default_value=60)
 
-    return parser_manager
+    return pm
 
 
 def generate_formula_configuration(config: Dict, cpu_topology: CPUTopology, scope: SmartWattsFormulaScope) -> SmartWattsFormulaConfig:
