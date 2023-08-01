@@ -1,5 +1,5 @@
-# Copyright (c) 2022, INRIA
-# Copyright (c) 2022, University of Lille
+# Copyright (c) 2023, INRIA
+# Copyright (c) 2023, University of Lille
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,27 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .actor import SmartWattsFormulaActor, SmartWattsFormulaState
-from .config import SmartWattsFormulaConfig, SmartWattsFormulaScope
-from .factory import SmartWattsFormulaFactory
+from typing import Dict
 
-__all__ = [
-    'SmartWattsFormulaActor',
-    'SmartWattsFormulaState',
-    'SmartWattsFormulaConfig',
-    'SmartWattsFormulaScope',
-    'SmartWattsFormulaFactory'
-]
+from powerapi.pusher import PusherActor
+
+from .actor import SmartWattsFormulaActor
+from .config import SmartWattsFormulaConfig
+
+
+class SmartWattsFormulaFactory:
+
+    def __init__(self, actor_config: SmartWattsFormulaConfig):
+        """
+        Initialize a new SmartWatts formula factory.
+        """
+        self.actor_config = actor_config
+
+    def __call__(self, actor_name: str, pushers: Dict[str, PusherActor]) -> SmartWattsFormulaActor:
+        """
+        Create a new SmartWatts formula actor.
+        :param actor_name: Name of the actor
+        :param pushers: Dictionary of available pushers
+        :return: A new SmartWatts formula actor
+        """
+        return SmartWattsFormulaActor(actor_name, pushers, self.actor_config)
