@@ -1,4 +1,6 @@
-# Copyright (c) 2023, INRIA
+# BSD 3-Clause License
+#
+# Copyright (c) 2023, Inria
 # Copyright (c) 2023, University of Lille
 # All rights reserved.
 #

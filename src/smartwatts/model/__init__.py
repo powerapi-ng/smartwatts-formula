@@ -1,4 +1,6 @@
-# Copyright (c) 2022, INRIA
+# BSD 3-Clause License
+#
+# Copyright (c) 2022, Inria
 # Copyright (c) 2022, University of Lille
 # All rights reserved.
 #
