@@ -36,6 +36,9 @@ from .config import SmartWattsFormulaConfig
 
 
 class SmartWattsFormulaFactory:
+    """
+    Factory to create SmartWatts formula actors.
+    """
 
     def __init__(self, actor_config: SmartWattsFormulaConfig):
         """
