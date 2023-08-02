@@ -35,7 +35,7 @@ from .actor import SmartWattsFormulaActor
 from .config import SmartWattsFormulaConfig
 
 
-class SmartWattsFormulaFactory:
+class SmartWattsFormulaActorFactory:
     """
     Factory to create SmartWatts formula actors.
     """
@@ -46,11 +46,11 @@ class SmartWattsFormulaFactory:
         """
         self.actor_config = actor_config
 
-    def __call__(self, actor_name: str, pushers: Dict[str, PusherActor]) -> SmartWattsFormulaActor:
+    def __call__(self, name: str, pushers: Dict[str, PusherActor]) -> SmartWattsFormulaActor:
         """
         Create a new SmartWatts formula actor.
-        :param actor_name: Name of the actor
+        :param name: Name of the actor
         :param pushers: Dictionary of available pushers
         :return: A new SmartWatts formula actor
         """
-        return SmartWattsFormulaActor(actor_name, pushers, self.actor_config)
+        return SmartWattsFormulaActor(name, pushers, self.actor_config)

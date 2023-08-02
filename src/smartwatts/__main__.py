@@ -45,7 +45,7 @@ from powerapi.filter import Filter
 from powerapi.report import HWPCReport
 
 from smartwatts import __version__ as smartwatts_version
-from smartwatts.actor import SmartWattsFormulaScope, SmartWattsFormulaConfig, SmartWattsFormulaFactory
+from smartwatts.actor import SmartWattsFormulaScope, SmartWattsFormulaConfig, SmartWattsFormulaActorFactory
 from smartwatts.cli import SmartWattsConfigValidator
 from smartwatts.exceptions import InvalidConfigurationParameterException
 from smartwatts.model import CPUTopology
@@ -109,7 +109,7 @@ def setup_cpu_formula_dispatcher(config, route_table, report_filter, cpu_topolog
     :return: Initialized CPU dispatcher actor
     """
     formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.CPU)
-    formula_factory = SmartWattsFormulaFactory(formula_config)
+    formula_factory = SmartWattsFormulaActorFactory(formula_config)
     cpu_dispatcher = DispatcherActor('cpu_dispatcher', formula_factory, pushers, route_table)
     report_filter.filter(lambda msg: True, cpu_dispatcher)
     return cpu_dispatcher
@@ -126,7 +126,7 @@ def setup_dram_formula_dispatcher(config, route_table, report_filter, cpu_topolo
     :return: Initialized DRAM dispatcher actor
     """
     formula_config = generate_formula_configuration(config, cpu_topology, SmartWattsFormulaScope.DRAM)
-    formula_factory = SmartWattsFormulaFactory(formula_config)
+    formula_factory = SmartWattsFormulaActorFactory(formula_config)
     dram_dispatcher = DispatcherActor('dram_dispatcher', formula_factory, pushers, route_table)
     report_filter.filter(lambda msg: True, dram_dispatcher)
     return dram_dispatcher

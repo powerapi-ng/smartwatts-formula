@@ -29,12 +29,12 @@
 
 from .actor import SmartWattsFormulaActor, SmartWattsFormulaState
 from .config import SmartWattsFormulaConfig, SmartWattsFormulaScope
-from .factory import SmartWattsFormulaFactory
+from .factory import SmartWattsFormulaActorFactory
 
 __all__ = [
     'SmartWattsFormulaActor',
     'SmartWattsFormulaState',
     'SmartWattsFormulaConfig',
     'SmartWattsFormulaScope',
-    'SmartWattsFormulaFactory'
+    'SmartWattsFormulaActorFactory'
 ]
