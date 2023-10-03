@@ -44,10 +44,10 @@ class PowerModel:
     This Power model compute the power estimations and handle the learning of a new model when needed.
     """
 
-    def __init__(self, frequency: float, history_window_size: int):
+    def __init__(self, frequency: int, history_window_size: int):
         """
         Initialize a new power model.
-        :param frequency: Frequency of the power model
+        :param frequency: Frequency of the power model (in MHz)
         :param history_window_size: Size of the history window used to keep samples to learn from
         """
         self.frequency = frequency
