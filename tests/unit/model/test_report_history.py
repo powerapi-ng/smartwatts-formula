@@ -40,7 +40,7 @@ def test_report_history_max_length_limit():
     history.store_report(3, [7, 8, 9])
 
     assert len(history) == history.max_length
-    assert len(history.X) == history.max_length
-    assert len(history.y) == history.max_length
-    assert list(history.X) == [[4, 5, 6], [7, 8, 9]]
-    assert list(history.y) == [2, 3]
+    assert len(history.events_values) == history.max_length
+    assert len(history.power_values) == history.max_length
+    assert list(history.events_values) == [[4, 5, 6], [7, 8, 9]]
+    assert list(history.power_values) == [2, 3]

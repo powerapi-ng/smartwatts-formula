@@ -70,7 +70,7 @@ class PowerModel:
         model = ElasticNet(fit_intercept=fit_intercept, positive=True)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model.fit(self.history.X, self.history.y)
+            model.fit(self.history.events_values, self.history.power_values)
 
         # Discard the new model when the intercept is not in specified range
         if not min_intercept <= model.intercept_ < max_intercept:
