@@ -36,7 +36,7 @@ from typing import Dict, List
 
 from sklearn.linear_model import ElasticNet
 
-from .report_history import ReportHistory
+from .history import ReportHistory
 
 
 class PowerModel:

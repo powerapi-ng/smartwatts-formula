@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .cpu_topology import CPUTopology
-from .report_history import ReportHistory
+from .history import ReportHistory
 from .power_model import PowerModel
 
 __all__ = [
