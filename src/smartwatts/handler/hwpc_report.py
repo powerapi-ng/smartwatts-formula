@@ -199,7 +199,7 @@ class HwPCReportHandler(Handler):
             'socket': self.state.socket,
             'layer_frequency': model.frequency,
             'pkg_frequency': pkg_frequency,
-            'samples': len(model.history),
+            'samples': len(model.samples_history),
             'id': model.id,
             'error': error,
             'intercept': model.model.intercept_,

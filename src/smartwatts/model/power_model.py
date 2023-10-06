@@ -53,7 +53,7 @@ class PowerModel:
         self.frequency = frequency
         self.model = ElasticNet()
         self.hash = 'uninitialized'
-        self.history = ReportHistory(history_window_size)
+        self.samples_history = ReportHistory(history_window_size)
         self.id = 0
 
     def learn_power_model(self, min_samples: int, min_intercept: float, max_intercept: float) -> None:
@@ -63,14 +63,14 @@ class PowerModel:
         :param min_intercept: Minimum value allowed for the intercept of the model
         :param max_intercept: Maximum value allowed for the intercept of the model
         """
-        if len(self.history) < min_samples:
+        if len(self.samples_history) < min_samples:
             return
 
-        fit_intercept = len(self.history) == self.history.max_length
+        fit_intercept = len(self.samples_history) == self.samples_history.max_length
         model = ElasticNet(fit_intercept=fit_intercept, positive=True)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model.fit(self.history.events_values, self.history.power_values)
+            model.fit(self.samples_history.events_values, self.samples_history.power_values)
 
         # Discard the new model when the intercept is not in specified range
         if not min_intercept <= model.intercept_ < max_intercept:
@@ -95,7 +95,7 @@ class PowerModel:
         :param power_reference: Power reference (in Watt)
         :param events: Events value
         """
-        self.history.store_report(power_reference, self._extract_events_value(events))
+        self.samples_history.store_report(power_reference, self._extract_events_value(events))
 
     def compute_power_estimation(self, events: Dict[str, float]) -> float:
         """
