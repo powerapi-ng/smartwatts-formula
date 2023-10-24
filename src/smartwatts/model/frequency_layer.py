@@ -1,7 +1,7 @@
 # BSD 3-Clause License
 #
-# Copyright (c) 2022, Inria
-# Copyright (c) 2022, University of Lille
+# Copyright (c) 2023, Inria
+# Copyright (c) 2023, University of Lille
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,38 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .cpu_topology import CPUTopology
+from typing import List
+
 from .sample_history import ReportHistory
 from .power_model import PowerModel
-from .frequency_layer import FrequencyLayer
 
-__all__ = [
-    'CPUTopology',
-    'ReportHistory',
-    'PowerModel',
-    'FrequencyLayer'
-]
+
+class FrequencyLayer:
+    """
+    Frequency layer of the CPU.
+    """
+
+    def __init__(self, frequency: int, min_samples: int, samples_window_size: int):
+        """
+        Initialize a new frequency layer.
+        :param min_samples: Minimum amount of samples required before trying to learn a power model
+        :param samples_window_size: Size of the samples history window used to keep samples to learn from
+        """
+        self.model = PowerModel(frequency, min_samples)
+        self.samples_history = ReportHistory(samples_window_size)
+
+    def update_power_model(self, min_intercept: float, max_intercept: float) -> None:
+        """
+        Learn a new power model using the sample's history.
+        :param min_intercept: Minimum intercept value allowed for the model
+        :param max_intercept: Maximum intercept value allowed for the model
+        """
+        self.model.learn_power_model(self.samples_history, min_intercept, max_intercept)
+
+    def store_sample_in_history(self, power_reference: float, events_value: List[float]) -> None:
+        """
+        Append a sample to the history.
+        :param power_reference: Power reference (RAPL) of the machine
+        :param events_value: Events value (Hardware Performance Counters) of the target
+        """
+        self.samples_history.store_report(power_reference, events_value)
