@@ -32,7 +32,7 @@
 import warnings
 from hashlib import sha1
 from pickle import dumps
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from sklearn.linear_model import ElasticNet
 
