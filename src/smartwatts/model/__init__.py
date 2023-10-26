@@ -30,13 +30,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .cpu_topology import CPUTopology
-from .sample_history import ReportHistory
+from .sample_history import ReportHistory, ErrorHistory
 from .power_model import PowerModel
 from .frequency_layer import FrequencyLayer
 
 __all__ = [
     'CPUTopology',
     'ReportHistory',
+    'ErrorHistory',
     'PowerModel',
     'FrequencyLayer'
 ]
