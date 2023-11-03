@@ -83,6 +83,8 @@ def generate_smartwatts_parser() -> CommonCLIParsingManager:
     # Learning parameters
     pm.add_argument('learn-min-samples-required', help_text='Minimum amount of samples required before trying to learn a power model', argument_type=int, default_value=10)
     pm.add_argument('learn-history-window-size', help_text='Size of the history window used to keep samples to learn from', argument_type=int, default_value=60)
+    pm.add_argument('learn-error-window-size', help_text='Size of the error window used to trigger the learning of a new power model', argument_type=int, default_value=60)
+    pm.add_argument('learn-error-window-method', help_text='Method used to compute the error window (supported: median, mean)', default_value='median')
 
     return pm
 
@@ -97,7 +99,9 @@ def generate_formula_configuration(config: Dict, cpu_topology: CPUTopology, scop
     min_samples = config['learn-min-samples-required']
     history_window_size = config['learn-history-window-size']
     real_time_mode = config['stream']
-    return SmartWattsFormulaConfig(scope, reports_freq, rapl_event, error_threshold, cpu_topology, min_samples, history_window_size, real_time_mode)
+    error_window_size = config['learn-error-window-size']
+    error_window_method = config['learn-error-window-method']
+    return SmartWattsFormulaConfig(scope, reports_freq, rapl_event, error_threshold, cpu_topology, min_samples, history_window_size, real_time_mode, error_window_size, error_window_method)
 
 
 def setup_cpu_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers) -> DispatcherActor:
