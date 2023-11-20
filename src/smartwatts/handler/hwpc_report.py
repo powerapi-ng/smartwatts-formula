@@ -177,7 +177,7 @@ class HwPCReportHandler(Handler):
         }
         return FormulaReport(timestamp, self.state.sensor, layer.model.hash, metadata)
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float, metadata: Dict[str, Any] = None) -> PowerReport:
+    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float, metadata: Dict[str, Any]) -> PowerReport:
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
