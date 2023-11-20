@@ -58,7 +58,7 @@ class HwPCReportHandler(Handler):
         :return: Initialized Ordered dict containing a power model for each frequency layer
         """
         return OrderedDict(
-            (freq, FrequencyLayer(freq, self.state.config.min_samples_required, self.state.config.history_window_size))
+            (freq, FrequencyLayer(freq, self.state.config.min_samples_required, self.state.config.history_window_size, self.state.config.error_window_size))
             for freq in self.state.config.cpu_topology.get_supported_frequencies()
         )
 
@@ -129,7 +129,7 @@ class HwPCReportHandler(Handler):
         # compute Global target power report
         try:
             raw_global_power = layer.model.compute_power_estimation(global_core)
-            power_reports.append(self._gen_power_report(timestamp, 'global', layer.model.hash, raw_global_power, 1.0, {}))
+            power_reports.append(self._gen_power_report(timestamp, 'global', layer.model.hash, raw_global_power, 1.0, global_report.metadata))
         except NotFittedError:
             layer.store_sample_in_history(rapl_power, self._extract_events_value(global_core))
             layer.model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
@@ -145,11 +145,11 @@ class HwPCReportHandler(Handler):
         # compute power model error from reference
         model_error = fabs(rapl_power - raw_global_power)
 
-        # store global report
         layer.store_sample_in_history(rapl_power, self._extract_events_value(global_core))
+        layer.store_error_in_history(model_error)
 
         # learn new power model if error exceeds the error threshold
-        if model_error > self.state.config.error_threshold:
+        if layer.error_history.compute_error(self.state.config.error_window_method) > self.state.config.error_threshold:
             layer.model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
 
         # store information about the power model used for this tick
