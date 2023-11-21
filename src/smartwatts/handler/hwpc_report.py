@@ -172,8 +172,8 @@ class HwPCReportHandler(Handler):
             'samples': len(layer.samples_history),
             'id': layer.model.id,
             'error': error,
-            'intercept': layer.model.intercept_,
-            'coef': str(layer.model.coef_)
+            'intercept': layer.model.clf.intercept_,
+            'coef': str(layer.model.clf.coef_)
         }
         return FormulaReport(timestamp, self.state.sensor, layer.model.hash, metadata)
 

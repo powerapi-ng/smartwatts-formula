@@ -51,7 +51,7 @@ class PowerModel:
         """
         self.frequency = frequency
         self.min_samples = min_samples
-        self.model = ElasticNet()
+        self.clf = ElasticNet()
         self.hash = 'uninitialized'
         self.id = 0
 
@@ -75,8 +75,8 @@ class PowerModel:
         if not min_intercept <= model.intercept_ < max_intercept:
             return
 
-        self.model = model
-        self.hash = sha1(dumps(self.model)).hexdigest()
+        self.clf = model
+        self.hash = sha1(dumps(self.clf)).hexdigest()
         self.id += 1
 
     def predict_power_consumption(self, events: List[float]) -> Optional[float]:
@@ -86,7 +86,7 @@ class PowerModel:
         :raise: NotFittedError when the model haven't been fitted
         :return: Power estimation for the given events value
         """
-        return self.model.predict([events])[0]
+        return self.clf.predict([events])[0]
 
     def cap_power_estimation(self, raw_target_power: float, raw_global_power: float) -> (float, float):
         """
@@ -95,13 +95,13 @@ class PowerModel:
         :param raw_global_power: Global power estimation from the power model (in Watt)
         :return: Capped power estimation (in Watt) with its ratio over global power consumption
         """
-        target_power = raw_target_power - self.model.intercept_
-        global_power = raw_global_power - self.model.intercept_
+        target_power = raw_target_power - self.clf.intercept_
+        global_power = raw_global_power - self.clf.intercept_
 
         if global_power <= 0.0 or target_power <= 0.0:
             return 0.0, 0.0
 
         target_ratio = target_power / global_power
-        target_intercept_share = target_ratio * self.model.intercept_
+        target_intercept_share = target_ratio * self.clf.intercept_
 
         return target_power + target_intercept_share, target_ratio
