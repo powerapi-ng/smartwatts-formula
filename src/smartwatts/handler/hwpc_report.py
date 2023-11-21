@@ -128,7 +128,7 @@ class HwPCReportHandler(Handler):
 
         # compute Global target power report
         try:
-            raw_global_power = layer.model.predict_power_consumption(global_core)
+            raw_global_power = layer.model.predict_power_consumption(self._extract_events_value(global_core))
             power_reports.append(self._gen_power_report(timestamp, 'global', layer.model.hash, raw_global_power, 1.0, global_report.metadata))
         except NotFittedError:
             layer.store_sample_in_history(rapl_power, self._extract_events_value(global_core))

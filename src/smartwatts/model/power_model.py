@@ -86,7 +86,7 @@ class PowerModel:
         :raise: NotFittedError when the model haven't been fitted
         :return: Power estimation for the given events value
         """
-        return self.model.predict(events)[0]
+        return self.model.predict([events])[0]
 
     def cap_power_estimation(self, raw_target_power: float, raw_global_power: float) -> (float, float):
         """
