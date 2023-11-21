@@ -128,17 +128,17 @@ class HwPCReportHandler(Handler):
 
         # compute Global target power report
         try:
-            raw_global_power = layer.model.compute_power_estimation(global_core)
+            raw_global_power = layer.model.predict_power_consumption(global_core)
             power_reports.append(self._gen_power_report(timestamp, 'global', layer.model.hash, raw_global_power, 1.0, global_report.metadata))
         except NotFittedError:
             layer.store_sample_in_history(rapl_power, self._extract_events_value(global_core))
-            layer.model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
+            layer.update_power_model(0.0, self.state.config.cpu_topology.tdp)
             return power_reports, formula_reports
 
         # compute per-target power report
         for target_name, target_report in hwpc_reports.items():
             target_core = self._gen_core_events_group(target_report)
-            raw_target_power = layer.model.compute_power_estimation(self._extract_events_value(target_core))
+            raw_target_power = layer.model.predict_power_consumption(self._extract_events_value(target_core))
             target_power, target_ratio = layer.model.cap_power_estimation(raw_target_power, raw_global_power)
             power_reports.append(self._gen_power_report(timestamp, target_name, layer.model.hash, target_power, target_ratio, target_report.metadata))
 
@@ -150,7 +150,7 @@ class HwPCReportHandler(Handler):
 
         # learn new power model if error exceeds the error threshold
         if layer.error_history.compute_error(self.state.config.error_window_method) > self.state.config.error_threshold:
-            layer.model.learn_power_model(self.state.config.min_samples_required, 0.0, self.state.config.cpu_topology.tdp)
+            layer.update_power_model(0.0, self.state.config.cpu_topology.tdp)
 
         # store information about the power model used for this tick
         formula_reports.append(self._gen_formula_report(timestamp, pkg_frequency, layer, model_error))
