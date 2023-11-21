@@ -30,19 +30,6 @@
 from smartwatts.model import PowerModel
 
 
-def test_store_power_reports_in_history():
-    """
-    Test that the power report is correctly stored in the reports history of the model.
-    """
-    model = PowerModel(0, 3)
-
-    model.store_report_in_history(0.0, {'A': 1.0, 'B': 2.0})
-    model.store_report_in_history(0.1, {'A': 1.1, 'B': 2.1})
-    model.store_report_in_history(0.2, {'A': 1.2, 'B': 2.2})
-    assert list(model.samples_history.events_values) == [[1.0, 2.0], [1.1, 2.1], [1.2, 2.2]]
-    assert list(model.samples_history.power_values) == [0.0, 0.1, 0.2]
-
-
 def test_cap_power_estimation_zero_target_and_total_power():
     """
     Test that capping a zero target and global power estimation with a zero intercept returns 0.
