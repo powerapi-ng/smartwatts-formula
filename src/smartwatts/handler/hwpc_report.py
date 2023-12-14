@@ -68,7 +68,7 @@ class HwPCReportHandler(Handler):
         :param frequency: CPU frequency
         :return: The nearest frequency layer for the given frequency
         """
-        return self.layers.get(max([freq for freq in self.layers.keys() if freq <= frequency]))
+        return self.layers.get(max(freq for freq in self.layers.keys() if freq <= frequency))
 
     def _compute_avg_pkg_frequency(self, system_msr: Dict[str, float]) -> int:
         """
