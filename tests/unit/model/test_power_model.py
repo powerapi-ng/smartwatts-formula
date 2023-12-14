@@ -27,6 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import math
 from smartwatts.model import PowerModel
 
 
@@ -38,8 +39,8 @@ def test_cap_power_estimation_zero_target_and_total_power():
     model.clf.intercept_ = 0.0
 
     power, ratio = model.cap_power_estimation(0.0, 0.0)
-    assert power == 0.0
-    assert ratio == 0.0
+    assert math.isclose(power, 0.0)
+    assert math.isclose(ratio, 0.0)
 
 
 def test_cap_power_estimation_zero_target_and_total_power_with_nonzero_intercept():
@@ -50,8 +51,8 @@ def test_cap_power_estimation_zero_target_and_total_power_with_nonzero_intercept
     model.clf.intercept_ = 10.0
 
     power, ratio = model.cap_power_estimation(0.0, 0.0)
-    assert power == 0.0
-    assert ratio == 0.0
+    assert math.isclose(power, 0.0)
+    assert math.isclose(ratio, 0.0)
 
 
 def test_cap_power_estimation_target_half_total_power():
@@ -62,8 +63,8 @@ def test_cap_power_estimation_target_half_total_power():
     model.clf.intercept_ = 0.0
 
     power, ratio = model.cap_power_estimation(50.0, 100.0)
-    assert power == 50.0
-    assert ratio == 0.5
+    assert math.isclose(power, 50.0)
+    assert math.isclose(ratio, 0.5)
 
 
 def test_cap_power_estimation_total_equal_target_power():
@@ -74,8 +75,8 @@ def test_cap_power_estimation_total_equal_target_power():
     model.clf.intercept_ = 0.0
 
     power, ratio = model.cap_power_estimation(100.0, 100.0)
-    assert power == 100.0
-    assert ratio == 1.0
+    assert math.isclose(power, 100.0)
+    assert math.isclose(ratio, 1.0)
 
 
 def test_cap_power_estimation_target_power_double_of_total_power():
@@ -86,8 +87,8 @@ def test_cap_power_estimation_target_power_double_of_total_power():
     model.clf.intercept_ = 0.0
 
     power, ratio = model.cap_power_estimation(200.0, 100.0)
-    assert power == 200.0
-    assert ratio == 2.0
+    assert math.isclose(power, 200.0)
+    assert math.isclose(ratio, 2.0)
 
 
 def test_cap_power_estimation_negative_target_power():
@@ -98,8 +99,8 @@ def test_cap_power_estimation_negative_target_power():
     model.clf.intercept_ = 0.0
 
     power, ratio = model.cap_power_estimation(-200.0, 100.0)
-    assert power == 0.0
-    assert ratio == 0.0
+    assert math.isclose(power, 0.0)
+    assert math.isclose(ratio, 0.0)
 
 
 def test_cap_power_estimation_when_intercept_greater_than_total_power():
@@ -110,8 +111,8 @@ def test_cap_power_estimation_when_intercept_greater_than_total_power():
     model.clf.intercept_ = 200.0
 
     power, ratio = model.cap_power_estimation(100.0, 100.0)
-    assert power == 0.0
-    assert ratio == 0.0
+    assert math.isclose(power, 0.0)
+    assert math.isclose(ratio, 0.0)
 
 
 def test_cap_power_estimation_with_nonzero_intercept():
@@ -122,5 +123,5 @@ def test_cap_power_estimation_with_nonzero_intercept():
     model.clf.intercept_ = 10.0
 
     power, ratio = model.cap_power_estimation(20.0, 110.0)
-    assert power == 10.0 + (ratio * model.clf.intercept_)
-    assert ratio == 0.1
+    assert math.isclose(power, 10.0 + (ratio * model.clf.intercept_))
+    assert math.isclose(ratio, 0.1)
