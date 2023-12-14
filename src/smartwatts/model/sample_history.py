@@ -100,7 +100,8 @@ class ErrorHistory:
         """
         if method == 'median':
             return median(self.error_values)
-        elif method == 'mean':
+
+        if method == 'mean':
             return mean(self.error_values)
 
         raise ValueError(f'Unknown method {method}')
