@@ -58,3 +58,9 @@ class SmartWattsConfigValidator(ConfigValidator):
 
         if config['learn-min-samples-required'] < 0 or config['learn-history-window-size'] < 0:
             raise InvalidConfigurationParameterException('Report history parameters must be positive')
+
+        if config['learn-error-window-size'] < 0:
+            raise InvalidConfigurationParameterException('Error history window size must be positive')
+
+        if config['learn-error-window-method'] not in ['mean', 'median']:
+            raise InvalidConfigurationParameterException('Error window method is not supported')

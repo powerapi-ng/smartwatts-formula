@@ -46,7 +46,7 @@ class SmartWattsFormulaConfig:
     """
 
     def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required,
-                 history_window_size, real_time_mode):
+                 history_window_size, real_time_mode, error_window_size, error_window_method):
         """
         Initialize a new formula config object.
         :param scope: Scope of the formula
@@ -56,6 +56,8 @@ class SmartWattsFormulaConfig:
         :param cpu_topology: Topology of the CPU
         :param min_samples_required: Minimum amount of samples required before trying to learn a power model
         :param history_window_size: Size of the history window used to keep samples to learn from
+        :param real_time_mode: Enable real time mode
+        :param error_window_method: Method used to compute the error value
         """
         self.scope = scope
         self.reports_frequency = reports_frequency
@@ -65,3 +67,5 @@ class SmartWattsFormulaConfig:
         self.min_samples_required = min_samples_required
         self.history_window_size = history_window_size
         self.real_time_mode = real_time_mode
+        self.error_window_size = error_window_size
+        self.error_window_method = error_window_method
