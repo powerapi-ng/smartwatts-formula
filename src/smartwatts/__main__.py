@@ -37,9 +37,10 @@ from typing import Dict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.backend_supervisor import BackendSupervisor
+from powerapi.cli.binding_manager import PreProcessorBindingManager
 from powerapi.cli.common_cli_parsing_manager import CommonCLIParsingManager
 from powerapi.cli.config_parser import store_true
-from powerapi.cli.generator import PusherGenerator, PullerGenerator
+from powerapi.cli.generator import PusherGenerator, PullerGenerator, PreProcessorGenerator
 from powerapi.dispatch_rule import HWPCDispatchRule, HWPCDepthLevel
 from powerapi.dispatcher import DispatcherActor, RouteTable
 from powerapi.exception import PowerAPIException, MissingArgumentException, NotAllowedArgumentValueException, FileDoesNotExistException
@@ -167,7 +168,15 @@ def run_smartwatts(config) -> None:
         logging.info('DRAM formula parameters: RAPL_REF=%s ERROR_THRESHOLD=%sW', config['dram-rapl-ref-event'], config['dram-error-threshold'])
         dispatchers['dram'] = setup_dram_formula_dispatcher(config, route_table, report_filter, cpu_topology, pushers)
 
-    actors = OrderedDict(**pushers, **dispatchers, **pullers)
+    if 'pre-processor' in config:
+        pre_processors = PreProcessorGenerator().generate(config)
+
+        binding_manager = PreProcessorBindingManager(pullers, pre_processors)
+        binding_manager.process_bindings()
+    else:
+        pre_processors = {}
+
+    actors = OrderedDict(**pushers, **dispatchers, **pre_processors, **pullers)
     supervisor = BackendSupervisor(config['stream'])
 
     def term_handler(_, __):
