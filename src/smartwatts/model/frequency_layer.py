@@ -58,6 +58,7 @@ class FrequencyLayer:
         :param max_intercept: Maximum intercept value allowed for the model
         """
         self.model.learn_power_model(self.samples_history, min_intercept, max_intercept)
+        self.error_history.clear()
 
     def store_sample_in_history(self, power_reference: float, events_value: List[float]) -> None:
         """

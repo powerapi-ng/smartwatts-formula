@@ -92,6 +92,12 @@ class ErrorHistory:
         """
         self.error_values.append(error_value)
 
+    def clear(self) -> None:
+        """
+        Clear the error history.
+        """
+        self.error_values.clear()
+
     def compute_error(self, method: str = 'median') -> float:
         """
         Compute the error from the history.
