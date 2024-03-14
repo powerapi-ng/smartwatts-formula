@@ -1,4 +1,4 @@
-FROM docker.io/powerapi/powerapi:2.3.0@sha256:a5ff16ec42411cef2739fcd0ea3cf409a16edf572a9b50e036e2ebac5c32e1d0
+FROM docker.io/powerapi/powerapi:2.4.0@sha256:7a2ff304ce0d2f3b591170fd890b2ea56f40ab690bc6911a55b5f0578c77324a
 
 USER powerapi
 COPY --chown=powerapi . /tmp/smartwatts
