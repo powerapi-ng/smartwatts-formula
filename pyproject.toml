@@ -58,7 +58,7 @@ version = {attr = "smartwatts.__version__"}
 
 [tool.ruff]
 target-version = "py38"  # should match minimal python version of PowerAPI
-select = [
+lint.select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -69,6 +69,6 @@ select = [
     "ERA", # eradicate
     "RUF", # ruff
 ]
-ignore = [
+lint.ignore = [
     "E501",  # line too long
 ]
