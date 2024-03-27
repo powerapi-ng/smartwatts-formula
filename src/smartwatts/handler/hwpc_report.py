@@ -112,6 +112,11 @@ class HwPCReportHandler(Handler):
             logging.error('Failed to process tick %s: missing global report', timestamp)
             return power_reports, formula_reports
 
+        # Don't continue if there is no reports available.
+        # Can happen when reports are dropped by a pre-processor.
+        if len(hwpc_reports) == 0:
+            return power_reports, formula_reports
+
         rapl = self._gen_rapl_events_group(global_report)
         avg_msr = self._gen_msr_events_group(global_report)
         global_core = self._gen_agg_core_report_from_running_targets(hwpc_reports)
