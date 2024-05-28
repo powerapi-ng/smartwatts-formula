@@ -1,4 +1,6 @@
-# Copyright (c) 2022, INRIA
+# BSD 3-Clause License
+#
+# Copyright (c) 2022, Inria
 # Copyright (c) 2022, University of Lille
 # All rights reserved.
 #
@@ -27,38 +29,19 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from enum import Enum
-
-
-class SmartWattsFormulaScope(Enum):
+class InvalidConfigurationParameterException(Exception):
     """
-    Enum used to set the scope of the SmartWatts formula.
-    """
-    CPU = "cpu"
-    DRAM = "dram"
-
-
-class SmartWattsFormulaConfig:
-    """
-    Global config of the SmartWatts formula.
+    This exception happens when a user try to set an invalid configuration parameter.
     """
 
-    def __init__(self, scope, reports_frequency, rapl_event, error_threshold, cpu_topology, min_samples_required, history_window_size, real_time_mode):
-        """
-        Initialize a new formula config object.
-        :param scope: Scope of the formula
-        :param reports_frequency: Frequency at which the reports (in milliseconds)
-        :param rapl_event: RAPL event to use as reference
-        :param error_threshold: Error threshold (in Watt)
-        :param cpu_topology: Topology of the CPU
-        :param min_samples_required: Minimum amount of samples required before trying to learn a power model
-        :param history_window_size: Size of the history window used to keep samples to learn from
-        """
-        self.scope = scope
-        self.reports_frequency = reports_frequency
-        self.rapl_event = rapl_event
-        self.error_threshold = error_threshold
-        self.cpu_topology = cpu_topology
-        self.min_samples_required = min_samples_required
-        self.history_window_size = history_window_size
-        self.real_time_mode = real_time_mode
+
+class PowerModelNotInitializedException(Exception):
+    """
+    This exception happens when a user try to compute a power estimation without having learned a power model.
+    """
+
+
+class NotEnoughReportsInHistoryException(Exception):
+    """
+    This exception happens when a user try to learn a power model without having enough reports in history.
+    """

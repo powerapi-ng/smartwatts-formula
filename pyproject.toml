@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartwatts"
+description = "SmartWatts is a formula for a self-adaptive software-defined power meter based on the PowerAPI framework."
+readme = "README.md"
+keywords = ["powerapi", "energy", "power-meter", "power-model", "green-computing", "containers"]
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.8"
+dynamic = ["version"]
+
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: BSD License",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: System :: Monitoring",
+]
+
+authors = [
+    {name = "Guillaume Fieni", email = "guillaume.fieni@inria.fr"},
+]
+
+dependencies = [
+    "powerapi[everything] == 2.6.0",
+    "scikit-learn >= 0.20.2",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest >= 3.9.2",
+    "pytest-cov >= 4.0.0",
+]
+
+lint = [
+    "ruff >= 0.0.262",
+    "pylint >= 2.16.0"
+]
+
+# Aliases:
+devel = ["smartwatts[test, lint]"]
+
+[project.urls]
+homepage = "https://powerapi.org"
+documentation = "https://powerapi.readthedocs.org"
+repository = "https://github.com/powerapi-ng/smartwatts-formula"
+
+[tool.setuptools.dynamic]
+version = {attr = "smartwatts.__version__"}
+
+[tool.ruff]
+target-version = "py38"  # should match minimal python version of PowerAPI
+lint.select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "B",  # flake8-bugbear
+    "G",  # flake8-logging-format
+    "PT", # flake8-pytest-style
+    "UP", # pyupgrade
+    "ERA", # eradicate
+    "RUF", # ruff
+]
+lint.ignore = [
+    "E501",  # line too long
+]

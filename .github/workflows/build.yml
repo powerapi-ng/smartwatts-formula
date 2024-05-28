@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build project and run tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.x"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[devel]"
+
+    - name: Lint with Ruff
+      run: |
+        ruff check src/ tests/
+
+    - name: Static code analysis with pylint
+      run: |
+        pylint src/ tests/
+
+    - name: Test with pytest
+      run: |
+        pytest --cov=smartwatts --cov-report=term --cov-report=xml tests/unit
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@125fc84a9a348dbcf27191600683ec096ec9021c # v4.4.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage.xml

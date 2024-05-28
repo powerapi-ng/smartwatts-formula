@@ -1,4 +1,6 @@
-# Copyright (c) 2022, INRIA
+# BSD 3-Clause License
+#
+# Copyright (c) 2022, Inria
 # Copyright (c) 2022, University of Lille
 # All rights reserved.
 #
@@ -27,53 +29,53 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import annotations
-
-from datetime import datetime
-from typing import Dict, Any
-
-from powerapi.report import Report
+from typing import List
 
 
-class FormulaReport(Report):
+class CPUTopology:
     """
-    FormulaReport stores information about a formula.
-    This is useful to gather information about a running formula in order to debug or compute statistics.
+    This class stores the necessary information about the CPU topology.
     """
 
-    def __init__(self, timestamp: datetime, sensor: str, target: str, metadata: Dict[str, Any]):
+    def __init__(self, tdp: int, freq_bclk: int, ratio_min: int, ratio_base: int, ratio_max: int):
         """
-        Initialize a Power report using the given parameters.
-        :param timestamp: Report timestamp
-        :param sensor: Sensor name
-        :param target: Target name
-        :param metadata: Metadata values, can be anything that add useful information
+        Create a new CPU topology object.
+        :param tdp: TDP of the CPU in Watt
+        :param freq_bclk: Base clock in MHz
+        :param ratio_min: Maximum efficiency ratio
+        :param ratio_base: Base frequency ratio
+        :param ratio_max: Maximum frequency ratio (with Turbo-Boost)
         """
-        Report.__init__(self, timestamp, sensor, target)
-        self.metadata = metadata
+        self.tdp = tdp
+        self.freq_bclk = freq_bclk
+        self.ratio_min = ratio_min
+        self.ratio_base = ratio_base
+        self.ratio_max = ratio_max
 
-    def __repr__(self) -> str:
-        return 'FormulaReport(%s, %s, %s, %s)' % (self.timestamp, self.sensor, self.target, self.metadata)
+    def get_min_frequency(self) -> int:
+        """
+        Compute and return the CPU max efficiency frequency.
+        :return: The CPU max efficiency frequency in MHz
+        """
+        return self.freq_bclk * self.ratio_min
 
-    @staticmethod
-    def from_json(data: Dict) -> FormulaReport:
+    def get_base_frequency(self) -> int:
         """
-        Generate a report using the given data.
-        :param data: Dictionary containing the report attributes
-        :return: The Formula report initialized with the given data
+        Compute and return the CPU base frequency.
+        :return: The CPU base frequency in MHz
         """
-        return FormulaReport(data['timestamp'], data['sensor'], data['target'], data['metadata'])
+        return self.freq_bclk * self.ratio_base
 
-    @staticmethod
-    def from_mongodb(data: Dict) -> FormulaReport:
+    def get_max_frequency(self) -> int:
         """
-        Cast from mongoDB
+        Compute and return the CPU maximum frequency. (Turbo-Boost included)
+        :return: The CPU maximum frequency in MHz
         """
-        return FormulaReport.from_json(data)
+        return self.freq_bclk * self.ratio_max
 
-    @staticmethod
-    def to_mongodb(report: FormulaReport) -> Dict:
+    def get_supported_frequencies(self) -> List[int]:
         """
-        Cast to mongoDB
+        Compute the supported frequencies for this CPU.
+        :return: A list of supported frequencies in MHz
         """
-        return report.__dict__
+        return [ratio * self.freq_bclk for ratio in range(self.ratio_min, self.ratio_max + 1)]

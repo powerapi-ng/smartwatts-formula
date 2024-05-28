@@ -1,4 +1,6 @@
-# Copyright (c) 2022, INRIA
+# BSD 3-Clause License
+#
+# Copyright (c) 2022, Inria
 # Copyright (c) 2022, University of Lille
 # All rights reserved.
 #
@@ -27,4 +29,4 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from smartwatts.report.formula_report import FormulaReport
+__version__ = "2.2.0"

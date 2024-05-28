@@ -2,11 +2,10 @@
 *
 
 # Include the necessary files to install with setuptools
-!smartwatts/
+!src/
 !LICENSE
 !README.md
-!setup.py
-!setup.cfg
+!pyproject.toml
 
 # Ignore Byte-compiled / optimized / DLL files
 **/__pycache__
