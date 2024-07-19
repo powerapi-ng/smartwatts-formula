@@ -6,7 +6,8 @@
         "model": "HWPCReport",
         "type": "socket",
         "name": "puller_socket",
-        "port": 9080
+        "port": 9080,
+        "host": "formula"
       }
     },
     "output": {
