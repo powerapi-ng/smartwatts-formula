@@ -3,11 +3,11 @@
 This folder contains several resources to test and configure PowerAPI on Docker based hosting platform using docker-compose.
 
 
-**NOTE:** 
-* This toolchain is meant for running quick tests 
+**NOTE:**
+* This toolchain is meant for running quick tests
   of the PowerAPI energy metering solution
   and is not suitable for detailed analysis.
-* For simplicity sake all components are deployed on a single host. 
+* For simplicity sake all components are deployed on a single host.
   While it makes it much easier to quickly experiment with PowerAPI monitoring,
   it should not be used when running actual tests. You should only run the sensor
   on your target systems and all other components on an independent system
@@ -17,27 +17,29 @@ This folder contains several resources to test and configure PowerAPI on Docker 
 
 ## Prerequisites
 
-* a linux system (tested on ubuntu 20.04 and 22.04)
+* a Linux system (tested on Ubuntu 20.04, 22.04, Debian 12)
 * docker
-* docker-compose
-* internet access for docker registry
+* docker compose 
+* Internet access for docker registry
 
 ## Quick Start
 
-No build step is needed, the default settings based on [mongodb/prometheus](#mongodb_prometheus) configuration can be launched "Out  of the box" with command below:
+No build step is needed, the default settings based on [mongodb/mongodb](#mongodb_mongodb) configuration can be launched "Out  of the box" with command below:
 
 ```
-docker-compose up
+docker compose up
 ```
 
 Always stop properly components to unmount associated resources:
 
 ```
-docker-compose down
+docker compose down
 ```
 
-For more accurate measurements, you should configure the formula according to the cpu on you host. This can be done by configuring CPU profile in _./formula_ folder configuration files.
-Look at [the offical powerapi documentation](https://powerapi-ng.github.io/howto_monitor_process/deploy_formula.html) to see which value to use for `cpu-ratio-base`,`cpu-ratio-min` and `cpu-ratio-max`.
+For more accurate measurements, you should configure the formula according to the CPU on your host. This can be done by configuring CPU profile in _./formula_ folder configuration files.
+Look at [the offical powerapi documentation](https://powerapi.org/reference/formulas/smartwatts/#parameters) to check CPU related values to define. In particular, you need to indicate `cpu-base-freq`.
+
+Please notice that you also need to adapt the sensor configuration file in _./sensor_ to indicate suitable `core events` according to your [CPU family](https://powerapi.org/reference/sensors/hwpc-sensor/#events).   
 
 ## Configuration
 
@@ -46,12 +48,10 @@ Based on docker-compose **profiles** and **.env** file, several configurations a
 | Source  | Destination |                             |
 |---------|-------------|-----------------------------|
 | socket  | csv         | [view](#socket_csv)         |
-| socket  | filedb      | [view](#socket_filedb)      |
 | socket  | influxdb2   | [view](#socket_influxdb2)   |
 | socket  | mongodb     | [view](#socket_mongodb)     |
 | socket  | prometheus  | [view](#socket_prometheus)  |
 | mongodb | csv         | [view](#mongodb_csv)        |
-| mongodb | filedb      | [view](#mongodb_filedb)     |
 | mongodb | influxdb2   | [view](#mongodb_influxdb2)  |
 | mongodb | mongodb     | [view](#mongodb_mongodb)    |
 | mongodb | prometheus  | [view](#mongodb_prometheus) |
@@ -63,8 +63,8 @@ Source and Destination selection can be done editing **.env** file as follow:
 POWERAPI_SOURCE=mongodb
 
 # Destination selection
-# Available options: influxdb2, prometheus, mongodb, csv, filedb
-POWERAPI_DESTINATION=prometheus
+# Available options: influxdb2, prometheus, mongodb, csv
+POWERAPI_DESTINATION=mongodb
 ```
 
 Currently, only [HWPC Sensor](https://powerapi.org/reference/sensors/hwpc-sensor/) and [SmartWatts Formula](https://powerapi.org/reference/formulas/smartwatts/) are supported and can be modified with properties below:
@@ -89,12 +89,11 @@ INFLUXDB_IMAGE=influxdb:2.7.5
 GRAFANA_IMAGE=grafana/grafana:10.1.9
 PROMETHEUS_IMAGE=prom/prometheus:v2.51.2
 CSV_IMAGE=busybox:stable-glibc
-FILEDB_IMAGE=busybox:stable-glibc
 SOCKET_IMAGE=busybox:stable-glibc
 ```
 
-**NOTE:** 
-* .env mechanism is native to docker-compose, this way, environnement is loaded by docker-compose
+**NOTE:**
+* .env mechanism is native to docker-compose, this way, environment is loaded by docker-compose
   without manual operations,
 * profiles mechanism allows to deploy only required components without editing docker-compose.yml,
 * each configuration is detailed below for further information on usage and settings.
@@ -136,42 +135,6 @@ An additional service **socket** is created and started to allow custom treatmen
 
 An additional service **csv** is created and started to allow custom treatments on ./csv folder and files, it can be edited using specific image **CSV_IMAGE** (default set to busybox) and using custom command attribute.
 
-#### <a name="socket_filedb"></a> Source: Socket - Destination: FileDB
-
-<!--
-@startuml plantuml/socket_filedb
-actor user
-package host {
-cloud {
-    component sensor
-    component formula
-    component filedb
-    component socket
-  }
-  folder "./filedb" as filedb_folder
-  file "./sensor/hwpc-socket.json" as sensor_conf
-  file "./formula/smartwatts-socket-filedb.json" as formula_conf
-}
-sensor <-[#black,dashed]- sensor_conf
-formula <-[#black,dashed]- formula_conf
-
-formula <-[#red]- sensor
-formula <-[#black]- socket
-
-filedb_folder <-[#blue]- formula
-
-filedb_folder <-[#black]- filedb
-filedb<-[#black]- filedb_folder
-
-user <-[#black]- filedb_folder
-@enduml
--->
-
-![](./plantuml/socket_filedb.svg)
-
-An additional service **socket** is created and started to allow custom treatments on sockets, it can be edited using specific image **SOCKET_IMAGE** (default set to busybox) and using custom command attribute.
-
-An additional service **filedb** is created and started to allow custom treatments on ./filedb folder and files, it can be edited using specific image **FILEDB_IMAGE** (default set to busybox) and using custom command attribute.
 
 #### <a name="socket_influxdb2"></a> Source: Socket - Destination: InfluxDB2
 
@@ -200,7 +163,7 @@ formula <-[#black]- socket
 
 influxdb2 <-[#blue]- formula
 
-grafana <-[#black]- influxdb2 
+grafana <-[#black]- influxdb2
 
 user <-[#black]- grafana : http://localhost:3000
 user <-[#black]- influxdb2 : http://localhost:8086
@@ -208,7 +171,7 @@ user <-[#black]- influxdb2 : http://localhost:8086
 -->
 
 ![](./plantuml/socket_influxdb2.svg)
-  
+
 Report can be viewed in Grafana dashboard with two panels:
 * the top panel  represents the energy consumption fo each constainer running on your host.
 * the bottom panel represents the energy consumption for the whole CPU as reported directly by the CPU (in green) and as estimated by powerAPI (in yellow).
@@ -237,7 +200,7 @@ formula <-[#black,dashed]- formula_conf
 formula <-[#red]- sensor
 formula <-[#black]- socket
 
-mongodb <-[#blue]- formula 
+mongodb <-[#blue]- formula
 
 mongo_express <-[#black]- mongodb
 
@@ -255,7 +218,7 @@ An additional service **socket** is created and started to allow custom treatmen
 
 <!--
 @startuml plantuml/socket_prometheus
-actor user 
+actor user
 package host {
 cloud {
     component sensor
@@ -335,45 +298,6 @@ user <-[#black]- mongo_express : http://localhost:8081
 
 An additional service **csv** is created and started to allow custom treatments on ./csv folder and files, it can be edited using specific image **CSV_IMAGE** (default set to busybox) and using custom command attribute.
 
-#### <a name="mongodb_filedb"></a> Source: MongoDB - Destination: FileDB
-
-<!--
-@startuml plantuml/mongodb_filedb
-actor user
-package host {
-cloud {
-    component sensor
-    component formula
-    component filedb
-    component mongodb
-    component mongo_express
-  }
-  folder "./filedb" as filedb_folder
-  file "./sensor/hwpc-mongodb.json" as sensor_conf
-  file "./formula/smartwatts-mongodb-filedb.json" as formula_conf
-}
-sensor <-[#black,dashed]- sensor_conf
-formula <-[#black,dashed]- formula_conf
-
-mongodb <-[#red]- sensor
-
-formula <-[#blue]- mongodb
-filedb_folder <-[#blue]- formula
-
-filedb_folder <-[#black]- filedb
-filedb<-[#black]- filedb_folder
-
-mongo_express <-[#black]- mongodb
-
-user <-[#black]- filedb_folder
-user <-[#black]- mongo_express : http://localhost:8081
-@enduml
--->
-
-![](./plantuml/mongodb_filedb.svg)
-
-An additional service **filedb** is created and started to allow custom treatments on ./filedb folder and files, it can be edited using specific image **FILEDB_IMAGE** (default set to busybox) and using custom command attribute.
-
 #### <a name="mongodb_influxdb2"></a> Source: MongoDB - Destination: InfluxDB2
 
 <!--
@@ -412,11 +336,11 @@ user <-[#black]- influxdb2 : http://localhost:8086
 -->
 
 ![](./plantuml/mongodb_influxdb2.svg)
-  
+
 Report can be viewed in Grafana dashboard with two panels:
 * the top panel  represents the energy consumption fo each constainer running on your host.
 * the bottom panel represents the energy consumption for the whole CPU as reported directly by the CPU (in green) and as estimated by powerAPI (in yellow).
-  
+
 #### <a name="mongodb_mongodb"></a> Source: MongoDB - Destination: MongoDB
 
 <!--
@@ -438,7 +362,7 @@ formula <-[#black,dashed]- formula_conf
 mongodb <-[#red]- sensor
 
 formula <-[#blue]- mongodb
-mongodb <-[#blue]- formula 
+mongodb <-[#blue]- formula
 
 mongo_express <-[#black]- mongodb
 
@@ -454,7 +378,7 @@ Mongo Express is used as GUI, MongoDB datasource for Grafana is part of Enterpri
 
 <!--
 @startuml plantuml/mongodb_prometheus
-actor user 
+actor user
 package host {
 cloud {
     component sensor
