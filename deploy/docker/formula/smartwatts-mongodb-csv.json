@@ -1,6 +1,6 @@
 {
     "verbose": true,
-    "stream": false,
+    "stream": true,
     "input": {
       "puller_mongodb": {
         "model": "HWPCReport",
