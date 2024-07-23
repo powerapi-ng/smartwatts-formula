@@ -1,6 +1,6 @@
 # PowerAPI Docker Toolchain
 
-This folder contains several resources to test and configure PowerAPI on Docker based hosting platform using docker-compose.
+This folder contains several resources to test and configure PowerAPI on Docker based hosting platform by using `docker compose`.
 
 
 **NOTE:**
@@ -17,10 +17,10 @@ This folder contains several resources to test and configure PowerAPI on Docker 
 
 ## Prerequisites
 
-* a Linux system (tested on Ubuntu 20.04, 22.04, Debian 12)
-* docker
-* docker compose 
-* Internet access for docker registry
+* a Linux system (tested on Ubuntu 20.04, Ubuntu 22.04, Debian 12)
+* `docker`
+* `docker compose` 
+* Internet access for `docker` registry
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ Please notice that you also need to adapt the sensor configuration file in _./se
 
 ## Configuration
 
-Based on docker-compose **profiles** and **.env** file, several configurations are available based on [Sources/Destinations](https://powerapi.org/reference/database/sources_destinations/) matrix:
+Based on `docker compose` **profiles** and **.env** file, several configurations are available based on [Sources/Destinations](https://powerapi.org/reference/database/sources_destinations/) matrix:
 
 | Source  | Destination |                             |
 |---------|-------------|-----------------------------|
@@ -67,20 +67,14 @@ POWERAPI_SOURCE=mongodb
 POWERAPI_DESTINATION=mongodb
 ```
 
-Currently, only [HWPC Sensor](https://powerapi.org/reference/sensors/hwpc-sensor/) and [SmartWatts Formula](https://powerapi.org/reference/formulas/smartwatts/) are supported and can be modified with properties below:
-```properties
-# Sensor selection
-# Available options: hwpc
-SENSOR_TYPE=hwpc
-SENSOR_IMAGE=powerapi/${SENSOR_TYPE}-sensor:1.3.0
+You can also select versions for [HWPC Sensor](https://powerapi.org/reference/sensors/hwpc-sensor/) and [SmartWatts Formula](https://powerapi.org/reference/formulas/smartwatts/) via `HWPC_SENSOR_VERSION` and `SMARTWATTS_VERSION` environment variables (for both, default version is `latest`) with the command below:
 
-# Formula selection
-# Available options: smartwatts
-FORMULA_TYPE=smartwatts
-FORMULA_IMAGE=powerapi/${FORMULA_TYPE}-formula:2.2.0
+```
+HWPC_SENSOR_VERSION=1.3.0 SMARTWATTS_VERSION=2.2.0 docker compose up
 ```
 
-At last, it's also possible to use specific images for third party components:
+
+At last, it's also possible to use specific images for third party components (default version is `latest`) by editing **.env** file:
 ```properties
 # Third party images
 MONGO_IMAGE=mongo:7.0.8
@@ -93,7 +87,7 @@ SOCKET_IMAGE=busybox:stable-glibc
 ```
 
 **NOTE:**
-* .env mechanism is native to docker-compose, this way, environment is loaded by docker-compose
+* .env mechanism is native to `docker compose`, this way, environment is loaded by `docker compose`
   without manual operations,
 * profiles mechanism allows to deploy only required components without editing docker-compose.yml,
 * each configuration is detailed below for further information on usage and settings.
