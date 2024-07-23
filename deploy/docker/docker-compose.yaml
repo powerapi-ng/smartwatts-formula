@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ############################################
   #          SOURCES & DESTINATIONS          #
@@ -56,15 +54,6 @@ services:
     profiles:
       - csv
 
-  # FileDB (Default is a dummy image, can be used to add treatments on data files)
-  filedb:
-    container_name: filedb
-    image: ${FILEDB_IMAGE}
-    volumes:
-      - ${PWD}/filedb:/tmp/filedb
-    profiles:
-      - filedb
-
   # Socket (Default is a dummy image, can be used to add treatments on formula socket)
   socket:
     container_name: socket
@@ -73,7 +62,7 @@ services:
       - socket
 
   ############################################
-  #                POWER API                 #
+  #                POWERAPI                  #
   ############################################
   # PowerAPI Sensor
   sensor:
@@ -84,8 +73,7 @@ services:
       - "--config-file"
       - "/etc/sensor.json"
     volumes:
-      - ${PWD}/sensor/${SENSOR_TYPE}-${POWERAPI_SOURCE}.json:/etc/sensor.json
-      - ${PWD}/csv:/tmp/csv
+      - ${PWD}/sensor/hwpc-${POWERAPI_SOURCE}.json:/etc/sensor.json
       - type: bind
         source: /proc
         target: /proc
@@ -109,14 +97,13 @@ services:
       - "--config-file"
       - "/etc/formula.json"
     volumes:
-      - ${PWD}/formula/${FORMULA_TYPE}-${POWERAPI_SOURCE}-${POWERAPI_DESTINATION}.json:/etc/formula.json
+      - ${PWD}/formula/smartwatts-${POWERAPI_SOURCE}-${POWERAPI_DESTINATION}.json:/etc/formula.json
       - ${PWD}/csv:/tmp/csv
-      - ${PWD}/filedb:/tmp/filedb
-    depends_on:
-      - ${POWERAPI_DESTINATION}
     networks:
       - powerapi-network     
     restart: unless-stopped
+
+
   
   ############################################
   #                  TOOLS                   #
@@ -165,7 +152,3 @@ services:
 
 networks:
   powerapi-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.34.0/24

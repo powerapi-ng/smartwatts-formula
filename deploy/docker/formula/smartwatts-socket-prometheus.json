@@ -6,7 +6,8 @@
         "model": "HWPCReport",
         "type": "socket",
         "name": "puller_socket",
-        "port": 9080
+        "port": 9080,
+        "host": "formula"
       }
     },
     "output": {
@@ -15,7 +16,7 @@
         "name": "pusher_prometheus",
         "uri": "0.0.0.0",
         "port": 9100,
-        "metric_name": "powerapi_energy_consumption"
+        "metric-name": "powerapi_energy_consumption"
       }
     },
     "cpu-base-freq": 1900,
