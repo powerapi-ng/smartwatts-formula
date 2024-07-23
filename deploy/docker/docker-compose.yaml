@@ -152,7 +152,3 @@ services:
 
 networks:
   powerapi-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.34.0/24
