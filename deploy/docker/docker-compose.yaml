@@ -73,7 +73,7 @@ services:
       - "--config-file"
       - "/etc/sensor.json"
     volumes:
-      - ${PWD}/sensor/${SENSOR_TYPE}-${POWERAPI_SOURCE}.json:/etc/sensor.json
+      - ${PWD}/sensor/hwpc-${POWERAPI_SOURCE}.json:/etc/sensor.json
       - type: bind
         source: /proc
         target: /proc
@@ -97,7 +97,7 @@ services:
       - "--config-file"
       - "/etc/formula.json"
     volumes:
-      - ${PWD}/formula/${FORMULA_TYPE}-${POWERAPI_SOURCE}-${POWERAPI_DESTINATION}.json:/etc/formula.json
+      - ${PWD}/formula/smartwatts-${POWERAPI_SOURCE}-${POWERAPI_DESTINATION}.json:/etc/formula.json
       - ${PWD}/csv:/tmp/csv
     networks:
       - powerapi-network     
