@@ -29,8 +29,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List
-
 from .sample_history import ReportHistory, ErrorHistory
 from .power_model import PowerModel
 
@@ -60,7 +58,7 @@ class FrequencyLayer:
         self.model.learn_power_model(self.samples_history, min_intercept, max_intercept)
         self.error_history.clear()
 
-    def store_sample_in_history(self, power_reference: float, events_value: List[float]) -> None:
+    def store_sample_in_history(self, power_reference: float, events_value: list[float]) -> None:
         """
         Append a sample to the history.
         :param power_reference: Power reference (RAPL) of the machine
