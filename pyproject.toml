@@ -8,12 +8,10 @@ description = "SmartWatts is a formula for a self-adaptive software-defined powe
 readme = "README.md"
 keywords = ["powerapi", "energy", "power-meter", "power-model", "green-computing", "containers"]
 license = {text = "BSD-3-Clause"}
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dynamic = ["version"]
 
 classifiers = [
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
