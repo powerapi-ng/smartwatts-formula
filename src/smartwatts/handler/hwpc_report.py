@@ -33,7 +33,7 @@ import itertools
 import logging
 from collections import OrderedDict, defaultdict
 from math import ldexp, fabs
-from typing import Dict, List, Any, Tuple
+from typing import Any
 
 from powerapi.handler import Handler
 from powerapi.report import PowerReport, HWPCReport, FormulaReport
@@ -50,7 +50,7 @@ class HwPCReportHandler(Handler):
     def __init__(self, state):
         Handler.__init__(self, state)
         self.layers = self._generate_frequency_layers()
-        self.ticks: OrderedDict[datetime.datetime, Dict[str, HWPCReport]] = OrderedDict()
+        self.ticks: OrderedDict[datetime.datetime, dict[str, HWPCReport]] = OrderedDict()
 
     def _generate_frequency_layers(self) -> OrderedDict[int, FrequencyLayer]:
         """
@@ -70,7 +70,7 @@ class HwPCReportHandler(Handler):
         """
         return self.layers.get(max(freq for freq in self.layers.keys() if freq <= frequency))
 
-    def _compute_avg_pkg_frequency(self, system_msr: Dict[str, float]) -> int:
+    def _compute_avg_pkg_frequency(self, system_msr: dict[str, float]) -> int:
         """
         Compute the average package frequency.
         :param system_msr: MSR events group of System target
@@ -96,7 +96,7 @@ class HwPCReportHandler(Handler):
                         pusher.send_data(report)
                         logging.debug('sent report: %s to %s', report, name)
 
-    def _process_oldest_tick(self) -> Tuple[List[PowerReport], List[FormulaReport]]:
+    def _process_oldest_tick(self) -> tuple[list[PowerReport], list[FormulaReport]]:
         """
         Process the oldest tick stored in the stack and generate power reports for the running target(s).
         :return: Power reports of the running target(s)
@@ -182,7 +182,7 @@ class HwPCReportHandler(Handler):
         }
         return FormulaReport(timestamp, self.state.sensor, layer.model.hash, metadata)
 
-    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float, metadata: Dict[str, Any]) -> PowerReport:
+    def _gen_power_report(self, timestamp: datetime, target: str, formula: str, power: float, ratio: float, metadata: dict[str, Any]) -> PowerReport:
         """
         Generate a power report using the given parameters.
         :param timestamp: Timestamp of the measurements
@@ -199,7 +199,7 @@ class HwPCReportHandler(Handler):
         }
         return PowerReport(timestamp, self.state.sensor, target, power, report_metadata)
 
-    def _gen_rapl_events_group(self, system_report) -> Dict[str, float]:
+    def _gen_rapl_events_group(self, system_report) -> dict[str, float]:
         """
         Generate an events group with the RAPL reference event converted in Watts for the current socket.
         :param system_report: The HWPC report of the System target
@@ -209,7 +209,7 @@ class HwPCReportHandler(Handler):
         energy = ldexp(cpu_events[self.state.config.rapl_event], -32) / (self.state.config.reports_frequency / 1000)
         return {self.state.config.rapl_event: energy}
 
-    def _gen_msr_events_group(self, system_report) -> Dict[str, float]:
+    def _gen_msr_events_group(self, system_report) -> dict[str, float]:
         """
         Generate an events group with the average of the MSR counters for the current socket.
         :param system_report: The HWPC report of the System target
@@ -223,7 +223,7 @@ class HwPCReportHandler(Handler):
                 msr_events_count[event_name] += 1
         return {k: (v / msr_events_count[k]) for k, v in msr_events_group.items()}
 
-    def _gen_core_events_group(self, report) -> Dict[str, float]:
+    def _gen_core_events_group(self, report) -> dict[str, float]:
         """
         Generate an events group with Core events for the current socket.
         The events value are the sum of the value for each CPU.
@@ -237,7 +237,7 @@ class HwPCReportHandler(Handler):
 
         return core_events_group
 
-    def _gen_agg_core_report_from_running_targets(self, targets_report) -> Dict[str, float]:
+    def _gen_agg_core_report_from_running_targets(self, targets_report) -> dict[str, float]:
         """
         Generate an aggregate Core events group of the running targets for the current socket.
         :param targets_report: List of Core events group of the running targets
@@ -251,7 +251,7 @@ class HwPCReportHandler(Handler):
         return agg_core_events_group
 
     @staticmethod
-    def _extract_events_value(events: Dict[str, float]) -> List[float]:
+    def _extract_events_value(events: dict[str, float]) -> list[float]:
         """
         Creates and return a list of events value from the events group.
         :param events: Events group

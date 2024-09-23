@@ -31,7 +31,6 @@
 
 from collections import deque
 from statistics import median, mean
-from typing import List
 
 
 class ReportHistory:
@@ -55,7 +54,7 @@ class ReportHistory:
         """
         return len(self.events_values)
 
-    def store_report(self, power_reference: float, events_value: List[float]) -> None:
+    def store_report(self, power_reference: float, events_value: list[float]) -> None:
         """
         Append a report to the report's history.
         :param events_value: List of raw events value

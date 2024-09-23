@@ -32,7 +32,6 @@
 import warnings
 from hashlib import sha1
 from pickle import dumps
-from typing import List, Optional
 
 from sklearn.linear_model import ElasticNet
 
@@ -79,7 +78,7 @@ class PowerModel:
         self.hash = sha1(dumps(self.clf)).hexdigest()
         self.id += 1
 
-    def predict_power_consumption(self, events: List[float]) -> Optional[float]:
+    def predict_power_consumption(self, events: list[float]) -> float | None:
         """
         Compute a power estimation from the events value using the power model.
         :param events: Events value

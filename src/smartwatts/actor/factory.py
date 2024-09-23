@@ -29,8 +29,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Dict
-
 from powerapi.pusher import PusherActor
 
 from .actor import SmartWattsFormulaActor
@@ -48,7 +46,7 @@ class SmartWattsFormulaActorFactory:
         """
         self.actor_config = actor_config
 
-    def __call__(self, name: str, pushers: Dict[str, PusherActor]) -> SmartWattsFormulaActor:
+    def __call__(self, name: str, pushers: dict[str, PusherActor]) -> SmartWattsFormulaActor:
         """
         Create a new SmartWatts formula actor.
         :param name: Name of the actor

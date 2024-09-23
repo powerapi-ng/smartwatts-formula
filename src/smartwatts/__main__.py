@@ -33,7 +33,6 @@ import logging
 import signal
 import sys
 from collections import OrderedDict
-from typing import Dict
 
 from powerapi import __version__ as powerapi_version
 from powerapi.backend_supervisor import BackendSupervisor
@@ -90,7 +89,7 @@ def generate_smartwatts_parser() -> CommonCLIParsingManager:
     return pm
 
 
-def generate_formula_configuration(config: Dict, cpu_topology: CPUTopology, scope: SmartWattsFormulaScope) -> SmartWattsFormulaConfig:
+def generate_formula_configuration(config: dict, cpu_topology: CPUTopology, scope: SmartWattsFormulaScope) -> SmartWattsFormulaConfig:
     """
     Generate a SmartWatts actor configuration.
     """

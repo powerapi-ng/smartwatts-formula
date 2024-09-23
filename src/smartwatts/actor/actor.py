@@ -31,7 +31,6 @@
 
 import logging
 import re
-from typing import Dict
 
 from powerapi.formula import FormulaActor, FormulaState
 from powerapi.handler import StartHandler, PoisonPillMessageHandler
@@ -69,7 +68,7 @@ class SmartWattsFormulaActor(FormulaActor):
     This actor handle the reports for the SmartWatts formula.
     """
 
-    def __init__(self, name, pushers: Dict[str, PusherActor], config: SmartWattsFormulaConfig, level_logger=logging.WARNING, timeout=None):
+    def __init__(self, name, pushers: dict[str, PusherActor], config: SmartWattsFormulaConfig, level_logger=logging.WARNING, timeout=None):
         super().__init__(name, pushers, level_logger, timeout)
         self.state = SmartWattsFormulaState(self, pushers, self.formula_metadata, config)
 

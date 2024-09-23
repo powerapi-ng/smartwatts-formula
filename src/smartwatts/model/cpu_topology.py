@@ -29,8 +29,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List
-
 
 class CPUTopology:
     """
@@ -73,7 +71,7 @@ class CPUTopology:
         """
         return self.freq_bclk * self.ratio_max
 
-    def get_supported_frequencies(self) -> List[int]:
+    def get_supported_frequencies(self) -> list[int]:
         """
         Compute the supported frequencies for this CPU.
         :return: A list of supported frequencies in MHz
