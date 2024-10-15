@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "smartwatts"
@@ -52,5 +52,6 @@ homepage = "https://powerapi.org"
 documentation = "https://powerapi.readthedocs.org"
 repository = "https://github.com/powerapi-ng/smartwatts-formula"
 
-[tool.setuptools.dynamic]
-version = {attr = "smartwatts.__version__"}
+[tool.hatch.version]
+source = "code"
+path = "src/smartwatts/__init__.py"
