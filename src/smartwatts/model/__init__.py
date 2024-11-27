@@ -36,8 +36,8 @@ from .frequency_layer import FrequencyLayer
 
 __all__ = [
     'CPUTopology',
-    'ReportHistory',
     'ErrorHistory',
+    'FrequencyLayer',
     'PowerModel',
-    'FrequencyLayer'
+    'ReportHistory'
 ]

@@ -35,8 +35,8 @@ from .factory import SmartWattsFormulaActorFactory
 
 __all__ = [
     'SmartWattsFormulaActor',
-    'SmartWattsFormulaState',
+    'SmartWattsFormulaActorFactory',
     'SmartWattsFormulaConfig',
     'SmartWattsFormulaScope',
-    'SmartWattsFormulaActorFactory'
+    'SmartWattsFormulaState'
 ]
