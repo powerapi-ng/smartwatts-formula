@@ -1,4 +1,4 @@
-FROM docker.io/powerapi/powerapi:2.8.0@sha256:d1a3946c07e21971299fc9ea0d2b8313652d4865f6d3a044e7873716aa96430f
+FROM docker.io/powerapi/powerapi:2.9.1@sha256:81fd8527aed8e67653ab1b1ef26d872cd790dda5e058090b1e88c7d7ccdc2c2d
 
 COPY --chown=powerapi . /tmp/smartwatts
 RUN pip install --no-cache-dir "/tmp/smartwatts" && rm -r /tmp/smartwatts
