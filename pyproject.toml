@@ -33,10 +33,10 @@ dependencies = [
     "scikit-learn >= 0.20.2",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 test = [
     "pytest >= 3.9.2",
-    "pytest-cov >= 4.0.0",
+    "pytest-cov >= 4.0.0"
 ]
 
 lint = [
@@ -44,8 +44,10 @@ lint = [
     "pylint >= 2.16.0"
 ]
 
-# Aliases:
-devel = ["smartwatts[test, lint]"]
+dev = [
+    {include-group = 'test'},
+    {include-group = 'lint'}
+]
 
 [project.urls]
 homepage = "https://powerapi.org"
