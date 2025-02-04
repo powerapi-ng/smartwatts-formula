@@ -18,29 +18,31 @@ jobs:
         python-version: ["3.x"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[devel]"
+        uv sync --dev
 
     - name: Lint with Ruff
       run: |
-        ruff check src/ tests/
+        uv run ruff check src/ tests/
 
     - name: Static code analysis with pylint
       run: |
-        pylint src/ tests/
+        uv run pylint src/ tests/
 
     - name: Test with pytest
       run: |
-        pytest --cov=smartwatts --cov-report=term --cov-report=xml tests/unit
+        uv run pytest --cov=smartwatts --cov-report=term --cov-report=xml tests/unit
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
