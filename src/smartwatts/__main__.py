@@ -33,8 +33,8 @@ import logging
 import signal
 import sys
 from collections import OrderedDict
+from importlib.metadata import version
 
-from powerapi import __version__ as powerapi_version
 from powerapi.backend_supervisor import BackendSupervisor
 from powerapi.cli.binding_manager import PreProcessorBindingManager
 from powerapi.cli.common_cli_parsing_manager import CommonCLIParsingManager
@@ -46,7 +46,6 @@ from powerapi.exception import PowerAPIException, MissingArgumentException, NotA
 from powerapi.filter import Filter
 from powerapi.report import HWPCReport
 
-from smartwatts import __version__ as smartwatts_version
 from smartwatts.actor import SmartWattsFormulaScope, SmartWattsFormulaConfig, SmartWattsFormulaActorFactory
 from smartwatts.cli import SmartWattsConfigValidator
 from smartwatts.exceptions import InvalidConfigurationParameterException
@@ -143,7 +142,7 @@ def run_smartwatts(config) -> None:
     Run PowerAPI with the SmartWatts formula.
     :param config: CLI arguments namespace
     """
-    logging.info('SmartWatts version %s based on PowerAPI version %s', smartwatts_version, powerapi_version)
+    logging.info('SmartWatts version %s based on PowerAPI version %s', version('smartwatts'), version('powerapi'))
 
     route_table = RouteTable()
     route_table.add_dispatch_rule(HWPCReport, HWPCDispatchRule(HWPCDepthLevel.SOCKET, primary=True))
