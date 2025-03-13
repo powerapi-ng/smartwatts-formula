@@ -1,15 +1,15 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv-build>=0.6.6,<0.7"]
+build-backend = "uv_build"
 
 [project]
 name = "smartwatts"
+version = "2.3.1"
 description = "SmartWatts is a formula for a self-adaptive software-defined power meter based on the PowerAPI framework."
 readme = "README.md"
 keywords = ["powerapi", "energy", "power-meter", "power-model", "green-computing", "containers"]
 license = {text = "BSD-3-Clause"}
 requires-python = ">=3.10"
-dynamic = ["version"]
 
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -53,7 +53,3 @@ dev = [
 homepage = "https://powerapi.org"
 documentation = "https://powerapi.readthedocs.org"
 repository = "https://github.com/powerapi-ng/smartwatts-formula"
-
-[tool.hatch.version]
-source = "code"
-path = "src/smartwatts/__init__.py"
