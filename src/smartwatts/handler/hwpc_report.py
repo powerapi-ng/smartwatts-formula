@@ -217,11 +217,12 @@ class HwPCReportHandler(Handler):
         """
         msr_events_group = defaultdict(int)
         msr_events_count = defaultdict(int)
-        for _, cpu_events in system_report.groups['msr'][str(self.state.socket)].items():
-            for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
+        for cpu_events in system_report.groups['msr'][str(self.state.socket)].values():
+            for event_name, event_value in cpu_events.items():
                 msr_events_group[event_name] += event_value
                 msr_events_count[event_name] += 1
-        return {k: (v / msr_events_count[k]) for k, v in msr_events_group.items()}
+
+        return {k: v / msr_events_count[k] for k, v in msr_events_group.items() if not k.startswith('time_')}
 
     def _gen_core_events_group(self, report) -> dict[str, float]:
         """
@@ -231,11 +232,11 @@ class HwPCReportHandler(Handler):
         :return: A dictionary containing the Core events of the current socket
         """
         core_events_group = defaultdict(int)
-        for _, cpu_events in report.groups['core'][str(self.state.socket)].items():
-            for event_name, event_value in {k: v for k, v in cpu_events.items() if not k.startswith('time_')}.items():
+        for cpu_events in report.groups['core'][str(self.state.socket)].values():
+            for event_name, event_value in cpu_events.items():
                 core_events_group[event_name] += event_value
 
-        return core_events_group
+        return {k: v for k, v in core_events_group.items() if not k.startswith('time_')}
 
     def _gen_agg_core_report_from_running_targets(self, targets_report) -> dict[str, float]:
         """
@@ -244,7 +245,7 @@ class HwPCReportHandler(Handler):
         :return: A dictionary containing an aggregate of the Core events for the running targets of the current socket
         """
         agg_core_events_group = defaultdict(int)
-        for _, target_report in targets_report.items():
+        for target_report in targets_report.value():
             for event_name, event_value in self._gen_core_events_group(target_report).items():
                 agg_core_events_group[event_name] += event_value
 
@@ -257,4 +258,4 @@ class HwPCReportHandler(Handler):
         :param events: Events group
         :return: List containing the events value sorted by event name
         """
-        return [value for _, value in sorted(events.items())]
+        return [events[key] for key in sorted(events)]
