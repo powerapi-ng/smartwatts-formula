@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "smartwatts"
-version = "2.3.1"
+version = "2.4.0"
 description = "SmartWatts is a formula for a self-adaptive software-defined power meter based on the PowerAPI framework."
 readme = "README.md"
 keywords = ["powerapi", "energy", "power-meter", "power-model", "green-computing", "containers"]
