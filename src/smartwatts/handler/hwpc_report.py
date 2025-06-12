@@ -245,7 +245,7 @@ class HwPCReportHandler(Handler):
         :return: A dictionary containing an aggregate of the Core events for the running targets of the current socket
         """
         agg_core_events_group = defaultdict(int)
-        for target_report in targets_report.value():
+        for target_report in targets_report.values():
             for event_name, event_value in self._gen_core_events_group(target_report).items():
                 agg_core_events_group[event_name] += event_value
 
