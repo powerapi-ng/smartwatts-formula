@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv-build>=0.6.6,<0.9"]
+requires = ["uv-build>=0.6.6,<0.10"]
 build-backend = "uv_build"
 
 [project]
